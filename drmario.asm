@@ -137,3 +137,5 @@ draw_screen:
         j main
         
     test:
+        sw $t1, 560($a0)
+        sw $t0, 688($a0)
