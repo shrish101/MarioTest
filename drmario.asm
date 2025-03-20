@@ -124,7 +124,7 @@ return_to_caller:
 pill_coords:
     li $a1, 25  # x
     li $a2, 15   # y
-    li $t7, 1   # 0 = vertical and 1 = horizontal
+    li $t7, 0   # 0 = vertical and 1 = horizontal
     jal pill_set_pos
 
 game_update_loop:
@@ -132,7 +132,7 @@ game_update_loop:
 	
 	# Sleep for 17 ms so frame rate is about 60
 	addi	$v0, $zero, 32	# syscall sleep
-	addi	$a0, $zero, 150	# 17 ms
+	addi	$a0, $zero, 66	# 17 ms
 	syscall
 	
 	jal collide_check
@@ -144,13 +144,20 @@ game_update_loop:
 	
 	bne $t9, 1, else      # If t9 == 1, or if a key is pressed, move on to next instruct, else loop
 	lw $t9, 4($t8)                    # load the second word into $t9
-    bne $t9, 0x61, elif               # If t9 = (user inputs A), move on to the next instruct, else loop. (pretend its not Q rn)
+	
+if: bne $t9, 0x61, elif               # If t9 = (user inputs A), move on to the next instruct, else loop. (pretend its not Q rn)
+    lw $t4, -8($t5)
+    beq $t7, 0, vertical # check if vertical or horizontal
+    j check_for_side
+    vertical: lw $t4, -4($t5)
+    check_for_side: bnez $t4, elif  # checks if the left side has collision
     addi $a1, $a1, -1
     
-
 elif: bne $t9, 0x64, elif_two
+    lw $t4, 4($t5)
+    bnez $t4, elif_two
     addi $a1, $a1, 1
-
+    
 elif_two: bne $t9, 0x77, else
     jal rotate
 
@@ -195,11 +202,11 @@ collide_check:
     #checking if next space is black or not
     #need to do something with sidewalls because these have different thinige
     addi $t1, $a2, 1
-    sll $t5, $t1, 6      # shifts a1 by 6 bits and stores it in t5, equivalent to y * 64
-    add $t5, $t5, $a1    # add x offset to t5 to get pixel position
-    sll $t5, $t5, 2      # multiply by 4 (word size)
-    add $t5, $t5, $t0    # add base address
-    lw $t6, 0($t5)       # store color
+    sll $t3, $t1, 6      # shifts a1 by 6 bits and stores it in t5, equivalent to y * 64
+    add $t3, $t3, $a1    # add x offset to t5 to get pixel position
+    sll $t3, $t3, 2      # multiply by 4 (word size)
+    add $t3, $t3, $t0    # add base address
+    lw $t6, 0($t3)       # store color
     
     beq $t7, 1, horizontal_collision
     beq $t7, 0, veritcal_collision
@@ -216,14 +223,14 @@ collision_detected:
 horizontal_collision:
     bnez $t6, collision_detected  # If not zero, collision detected 
     # Check the second part of the horizontal pill
-    addi $t5, $t5, 4         # Move to the next block
-    lw $t6, 0($t5)           # Load the color at the second block
+    addi $t3, $t3, 4         # Move to the next block
+    lw $t6, 0($t3)           # Load the color at the second block
     bnez $t6, collision_detected  # If not zero, collision detected
     jr $ra
         
 veritcal_collision:
-    addi $t5, $t5, 256
-    lw $t6, 0($t5)           # Load the color at the second block
+    addi $t3, $t3, 256
+    lw $t6, 0($t3)           # Load the color at the second block
     bnez $t6, collision_detected  # If not zero, collision detected
     jr $ra
 
