@@ -124,7 +124,7 @@ return_to_caller:
 pill_coords:
     li $a1, 25  # x
     li $a2, 15   # y
-    li $t7, 0   # 0 = vertical and 1 = horizontal
+    li $t7, 1   # 0 = vertical and 1 = horizontal
     jal pill_set_pos
 
 game_update_loop:
@@ -134,6 +134,9 @@ game_update_loop:
 	addi	$v0, $zero, 32	# syscall sleep
 	addi	$a0, $zero, 150	# 17 ms
 	syscall
+	
+	jal collide_check
+	beq $v0, 1, pill_coords
 	
 	add $a3, $zero, 0x000000    #color
 	jal pill_set_pos
@@ -188,8 +191,39 @@ rotate:
     xori $t7, $t7, 1    #toggle the piece
     jr $ra
   
-#Incomlpete thinking in process
 collide_check:
-    bne $t5, 0x000000, pill_coords
+    #checking if next space is black or not
+    #need to do something with sidewalls because these have different thinige
+    addi $t1, $a2, 1
+    sll $t5, $t1, 6      # shifts a1 by 6 bits and stores it in t5, equivalent to y * 64
+    add $t5, $t5, $a1    # add x offset to t5 to get pixel position
+    sll $t5, $t5, 2      # multiply by 4 (word size)
+    add $t5, $t5, $t0    # add base address
+    lw $t6, 0($t5)       # store color
     
+    beq $t7, 1, horizontal_collision
+    beq $t7, 0, veritcal_collision
+
+    # No collision detected, return 0
+    li $v0, 0
+    jr $ra
+
+collision_detected:
+    li   $v0, 1          # Collision detected, return 1
+    jr   $ra 
+
+#This feels hard code we can fix later
+horizontal_collision:
+    bnez $t6, collision_detected  # If not zero, collision detected 
+    # Check the second part of the horizontal pill
+    addi $t5, $t5, 4         # Move to the next block
+    lw $t6, 0($t5)           # Load the color at the second block
+    bnez $t6, collision_detected  # If not zero, collision detected
+    jr $ra
+        
+veritcal_collision:
+    addi $t5, $t5, 256
+    lw $t6, 0($t5)           # Load the color at the second block
+    bnez $t6, collision_detected  # If not zero, collision detected
+    jr $ra
 
