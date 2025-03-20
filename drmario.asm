@@ -124,6 +124,7 @@ return_to_caller:
 pill_coords:
     li $a1, 25  # x
     li $a2, 15   # y
+    li $t7, 0   # 0 = vertical and 1 = horizontal
     jal pill_set_pos
 
 game_update_loop:
@@ -131,7 +132,7 @@ game_update_loop:
 	
 	# Sleep for 17 ms so frame rate is about 60
 	addi	$v0, $zero, 32	# syscall sleep
-	addi	$a0, $zero, 66	# 17 ms
+	addi	$a0, $zero, 150	# 17 ms
 	syscall
 	
 	add $a3, $zero, 0x000000    #color
@@ -142,8 +143,14 @@ game_update_loop:
 	lw $t9, 4($t8)                    # load the second word into $t9
     bne $t9, 0x61, elif               # If t9 = (user inputs A), move on to the next instruct, else loop. (pretend its not Q rn)
     addi $a1, $a1, -1
-elif: bne $t9, 0x64, else
+    
+
+elif: bne $t9, 0x64, elif_two
     addi $a1, $a1, 1
+
+elif_two: bne $t9, 0x77, else
+    jal rotate
+
 else: 
     add $a3, $zero, 0xffffff
     jal pill_set_pos
@@ -162,4 +169,27 @@ pill_set_pos:
     sll $t5, $t5, 2      # multiply by 4 (word size)
     add $t5, $t5, $t0    # add base address
     sw $a3, 0($t5)       # store color
+    
+    beq $t7, 1, horizontal_pill
+    j vertical_pill
+    
+horizontal_pill:
+    addi $t5, $t5, 4    #move by 4bytes
+    j draw_second_block
+    
+vertical_pill:
+    addi $t5, $t5, 256
+    
+draw_second_block:
+    sw $a3, 0($t5)
     jr $ra
+
+rotate:
+    xori $t7, $t7, 1    #toggle the piece
+    jr $ra
+  
+#Incomlpete thinking in process
+collide_check:
+    bne $t5, 0x000000, pill_coords
+    
+
