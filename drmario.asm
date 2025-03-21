@@ -122,10 +122,13 @@ return_to_caller:
     jr $ra
 
 pill_coords:
-    li $a1, 25  # x
-    li $a2, 15   # y
+    add $t5, $zero, $zero
+    jal random_colour
+    add $t5, $zero, 1
+    jal random_colour
+    add $a1, $zero, 25  # x
+    add $a2, $zero, 15   # y
     li $t7, 0   # 0 = vertical and 1 = horizontal
-    #jal random_colour
     jal pill_set_pos
 
 game_update_loop:
@@ -139,9 +142,14 @@ game_update_loop:
 	jal collide_check
 	beq $v0, 1, pill_coords
 	
-	add $a3, $zero, 0x000000    #color
-	jal pill_set_pos
-	addi $a2, $a2, 1
+	move $t1, $a3           
+	move $t2, $v1
+    add $a3, $zero, 0x000000 
+    add $v1, $zero, 0x000000 
+    jal pill_set_pos         
+    addi $a2, $a2, 1         
+    move $a3, $t1
+    move $v1, $t2
 	
 	bne $t9, 1, else      # If t9 == 1, or if a key is pressed, move on to next instruct, else loop
 	lw $t9, 4($t8)                    # load the second word into $t9
@@ -163,7 +171,7 @@ elif_two: bne $t9, 0x77, else
     jal rotate
 
 else: 
-    add $a3, $zero, 0xffffff
+    #add $a3, $zero, 0xffffff
     jal pill_set_pos
     
     # here we can implement a reset for the pill location
@@ -193,7 +201,7 @@ vertical_pill:
     addi $t5, $t5, 256
     
 draw_second_block:
-    sw $a3, 0($t5)
+    sw $v1, 0($t5)
     jr $ra
 
 rotate:
@@ -241,20 +249,40 @@ random_colour:
     li $a0, 0           # Lower bound (0)
     li $a1, 3           # Upper bound (exclusive) → generates 0, 1, or 2
     syscall             # Random number stored in $a0
+    
+    beq $t5, 0, pixel_one
+    beq $t5, 1, pixel_two
 
+pixel_one:
+    
     beq $a0, 0, color_red
     beq $a0, 1, color_blue
     beq $a0, 2, color_yellow
-
-color_red:
-    li $a3, 0xFF0000    # Red color
-    jr $ra
-
-color_blue:
-    li $a3, 0x0000FF    # Blue color
-    jr $ra
-
-color_yellow:
-    li $a3, 0xFFFF00    # Yellow color
-    jr $ra
     
+    color_red:
+        addi $a3, $zero, 0xFF0000    # Red color
+        jr $ra
+    
+    color_blue:
+        addi $a3, $zero, 0x0000FF    # Blue color
+        jr $ra
+    
+    color_yellow:
+        addi $a3, $zero, 0xFFFF00    # Yellow color
+        jr $ra
+
+pixel_two:
+    beq $a0, 0, color_red2
+    beq $a0, 1, color_blue2
+    beq $a0, 2, color_yellow2
+    color_red2:
+        addi $v1, $zero, 0xFF0000    # Red color
+        jr $ra
+    
+    color_blue2:
+        addi $v1, $zero, 0x0000FF    # Blue color
+        jr $ra
+    
+    color_yellow2:
+        addi $v1, $zero, 0xFFFF00    # Yellow color
+        jr $ra
