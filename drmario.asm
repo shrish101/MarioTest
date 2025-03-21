@@ -125,6 +125,7 @@ pill_coords:
     li $a1, 25  # x
     li $a2, 15   # y
     li $t7, 0   # 0 = vertical and 1 = horizontal
+    #jal random_colour
     jal pill_set_pos
 
 game_update_loop:
@@ -178,6 +179,7 @@ pill_set_pos:
     add $t5, $t5, $a1    # add x offset to t5 to get pixel position
     sll $t5, $t5, 2      # multiply by 4 (word size)
     add $t5, $t5, $t0    # add base address
+
     sw $a3, 0($t5)       # store color
     
     beq $t7, 1, horizontal_pill
@@ -234,3 +236,25 @@ veritcal_collision:
     bnez $t6, collision_detected  # If not zero, collision detected
     jr $ra
 
+random_colour:
+    li $v0, 42          # Random number syscall
+    li $a0, 0           # Lower bound (0)
+    li $a1, 3           # Upper bound (exclusive) → generates 0, 1, or 2
+    syscall             # Random number stored in $a0
+
+    beq $a0, 0, color_red
+    beq $a0, 1, color_blue
+    beq $a0, 2, color_yellow
+
+color_red:
+    li $a3, 0xFF0000    # Red color
+    jr $ra
+
+color_blue:
+    li $a3, 0x0000FF    # Blue color
+    jr $ra
+
+color_yellow:
+    li $a3, 0xFFFF00    # Yellow color
+    jr $ra
+    
