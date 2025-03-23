@@ -93,26 +93,6 @@ li $a2, 1                   #flag for horizontal or vertical
 li $t4, 0
 jal draw_line
 
-line_six:
-add $a0, $zero, 19      # Corrected x = 25
-add $a1, $zero, 12      # y = 5 to match other lines
-add $t6, $zero, 3      # size = 3 pixels
-add $a3, $zero, 0xffffff    #color
-li $a2, 0               # Vertical line
-li $t4, 0
-jal draw_line
-
-line_seven:
-add $a0, $zero, 30      # Corrected x = 29 (1-pixel gap)
-add $a1, $zero, 12       # y remains 5 to align with line six
-add $t6, $zero, 3       # size = 3 pixels
-add $a3, $zero, 0xffffff    #color
-li $a2, 0               # Vertical line
-li $t4, 0
-jal draw_line
-
-
-
 # x/a0 = 10, y/a1 = 15, size/t6 = 40, a2/orientation = vertical, color/a3 = black
 germ:
 add $a0, $zero, 20          #x-axis
@@ -169,7 +149,7 @@ pill_coords:
     add $t5, $zero, 1
     jal random_colour
     add $a1, $zero, 25  # x
-    add $a2, $zero, 12   # y
+    add $a2, $zero, 15   # y
     li $t7, 0   # 0 = vertical and 1 = horizontal
     jal pill_set_pos
 
@@ -178,11 +158,11 @@ game_update_loop:
 	
 	# Sleep for 17 ms so frame rate is about 60
 	addi	$v0, $zero, 32	# syscall sleep
-	addi	$a0, $zero, 150	# 17 ms
+	addi	$a0, $zero, 66	# 17 ms
 	syscall
 	
-	jal collide_check
-	beq $v0, 1, pill_coords
+	j collide_check
+	done: beq $v0, 1, pill_coords
 	
     addi $sp, $sp, -4
     sw $a3, 0($sp)
@@ -276,11 +256,12 @@ collide_check:
 
     # No collision detected, return 0
     li $v0, 0
-    jr $ra
+    j done
 
 collision_detected:
     li   $v0, 1          # Collision detected, return 1
-    jr   $ra 
+    j check_pixels_for_row
+    j done 
 
 #This feels hard code we can fix later
 horizontal_collision:
@@ -289,13 +270,13 @@ horizontal_collision:
     addi $t3, $t3, 4         # Move to the next block
     lw $t6, 0($t3)           # Load the color at the second block
     bnez $t6, collision_detected  # If not zero, collision detected
-    jr $ra
+    j done
         
 veritcal_collision:
     addi $t3, $t3, 256
     lw $t6, 0($t3)           # Load the color at the second block
     bnez $t6, collision_detected  # If not zero, collision detected
-    jr $ra
+    j done
 
 random_colour:
     li $v0, 42          # Random number syscall
@@ -339,3 +320,54 @@ pixel_two:
     color_yellow2:
         addi $v1, $zero, 0xFFFF00    # Yellow color
         jr $ra
+    
+check_pixels_for_row:
+    add $s5, $zero, $v1
+    addi $s7, $zero, 256 # offset amount set to 256
+    jal check_4
+    addi $s7, $zero, 4 #offset amount change to 4
+    jal check_4
+    bne $t7, 0, hor
+    addi $t5, $t5, -256
+    hor: addi $t5, $t5, -4
+    
+    add $s5, $zero, $a3
+    jal check_4
+    addi $s7, $zero, 256
+    jal check_4
+    bne $t7, 0, hor2
+    addi $t5, $t5, 256
+    hor2: addi $t5, $t5, 4
+    
+    j done
+    
+check_4:
+    addi $s0, $zero, 0 # s0 = counter
+    addi $s1, $zero, 1 # s1 = offset
+    add $t4, $zero, $t5 # t4 = temp bitmap address
+    
+    loop:
+    # Check if $s2 >= -1
+    addi $t1, $zero, -1      # Load -1 into $t1
+    blt  $s1, $t1, endloop   # Branch to endloop if $s1 < -1
+    mul $t3, $s1, $s7
+    add $t4, $t4, $t3
+    lw $s6, 0($t4)
+    beq $s6, $s5, else_same
+        addi $s1, $s1, -2
+        add $t4, $zero, $t5
+        j loop
+    else_same:
+        addi $s0, $s0, 1
+    
+    bne $s0, 3, loop
+        mul $s1, $s1, -1
+        addi $t1, $zero, 0x000000
+        sw $t1, 0($t4)
+        loop2: beq $s0, 0, loop
+            mul $t3, $s1, $s7
+            add $t4, $t4, $t3
+            sw $t1, 0($t4)
+            addi $s0, $s0, -1
+            j loop2
+    endloop: jr $ra
