@@ -100,6 +100,7 @@ draw_line:
     add $t5, $t5, $a0    # add x offset to t5 to get pixel position
     sll $t5, $t5, 2      # multiply by 4 (word size)
     add $t5, $t5, $t0    # add base address
+    
     sw $a3, 0($t5)       # store color
     
     beq $a2, 1, move_horizontal 
@@ -142,14 +143,19 @@ game_update_loop:
 	jal collide_check
 	beq $v0, 1, pill_coords
 	
-	move $t1, $a3           
-	move $t2, $v1
+    addi $sp, $sp, -4
+    sw $a3, 0($sp)
+    addi $sp, $sp, -4
+    sw $v1, 0($sp)
     add $a3, $zero, 0x000000 
     add $v1, $zero, 0x000000 
     jal pill_set_pos         
     addi $a2, $a2, 1         
-    move $a3, $t1
-    move $v1, $t2
+    lw $v1, 0($sp)
+    addi $sp, $sp, 4
+    lw $a3, 0($sp)
+    addi $sp, $sp, 4
+
 	
 	bne $t9, 1, else      # If t9 == 1, or if a key is pressed, move on to next instruct, else loop
 	lw $t9, 4($t8)                    # load the second word into $t9
