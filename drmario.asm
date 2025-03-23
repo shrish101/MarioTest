@@ -93,6 +93,26 @@ li $a2, 1                   #flag for horizontal or vertical
 li $t4, 0
 jal draw_line
 
+line_six:
+add $a0, $zero, 19      # Corrected x = 25
+add $a1, $zero, 12      # y = 5 to match other lines
+add $t6, $zero, 3      # size = 3 pixels
+add $a3, $zero, 0xffffff    #color
+li $a2, 0               # Vertical line
+li $t4, 0
+jal draw_line
+
+line_seven:
+add $a0, $zero, 30      # Corrected x = 29 (1-pixel gap)
+add $a1, $zero, 12       # y remains 5 to align with line six
+add $t6, $zero, 3       # size = 3 pixels
+add $a3, $zero, 0xffffff    #color
+li $a2, 0               # Vertical line
+li $t4, 0
+jal draw_line
+
+
+
 # x/a0 = 10, y/a1 = 15, size/t6 = 40, a2/orientation = vertical, color/a3 = black
 germ:
 add $a0, $zero, 20          #x-axis
@@ -149,7 +169,7 @@ pill_coords:
     add $t5, $zero, 1
     jal random_colour
     add $a1, $zero, 25  # x
-    add $a2, $zero, 15   # y
+    add $a2, $zero, 12   # y
     li $t7, 0   # 0 = vertical and 1 = horizontal
     jal pill_set_pos
 
@@ -319,4 +339,3 @@ pixel_two:
     color_yellow2:
         addi $v1, $zero, 0xFFFF00    # Yellow color
         jr $ra
-
