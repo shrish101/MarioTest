@@ -93,6 +93,17 @@ li $a2, 1                   #flag for horizontal or vertical
 li $t4, 0
 jal draw_line
 
+# x/a0 = 10, y/a1 = 15, size/t6 = 40, a2/orientation = vertical, color/a3 = black
+germ:
+add $a0, $zero, 20          #x-axis
+add $a1, $zero, 15          #y-axis
+add $t6, $zero, 10          #size
+add $a3, $zero, 0x000000    #color
+li $a2, 1                   #flag for horizontal or vertical
+li $t4, 0
+jal draw_line
+
+
 j pill_coords  # after drawing everything program counter goes to the game loop
 
 draw_line:
@@ -122,6 +133,16 @@ move_vertical:
 return_to_caller:
     jr $ra
 
+load_germ_save_coord:
+    li $v0, 42          # Random number syscall
+    li $a0, 1           # Lower bound (0)
+    li $a1, 4           # Upper bound (exclusive) → generates 1, 2, 3, or 4
+    syscall             # Random number stored in $a0
+    
+    addi $t1, $t1, 0
+    loop_for_germs:
+    
+
 pill_coords:
     add $t5, $zero, $zero
     jal random_colour
@@ -137,7 +158,7 @@ game_update_loop:
 	
 	# Sleep for 17 ms so frame rate is about 60
 	addi	$v0, $zero, 32	# syscall sleep
-	addi	$a0, $zero, 66	# 17 ms
+	addi	$a0, $zero, 150	# 17 ms
 	syscall
 	
 	jal collide_check
@@ -174,8 +195,14 @@ elif: bne $t9, 0x64, elif_two
     addi $a1, $a1, 1
     
 elif_two: bne $t9, 0x77, else
-    jal rotate
-
+    beq $t7, 0, vertical_rotation # check if vertical or horizontal
+    j rotate_check
+    vertical_rotation:
+    lw $t4, 4($t5)
+    beq $t4, 0x000000 rotate_check
+    addi $a1, $a1, -1
+    rotate_check: jal rotate
+    
 else: 
     #add $a3, $zero, 0xffffff
     jal pill_set_pos
@@ -292,3 +319,4 @@ pixel_two:
     color_yellow2:
         addi $v1, $zero, 0xFFFF00    # Yellow color
         jr $ra
+
