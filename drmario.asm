@@ -158,7 +158,8 @@ game_update_loop:
 	
 	# Sleep for 17 ms so frame rate is about 60
 	addi	$v0, $zero, 32	# syscall sleep
-	addi	$a0, $zero, 66	# 17 ms
+	#addi	$a0, $zero, 66	# 17 ms
+	addi	$a0, $zero, 100	# 17 ms
 	syscall
 	
 	j collide_check
@@ -238,8 +239,18 @@ draw_second_block:
     jr $ra
 
 rotate:
+    beq $t7, 1 skip_swap     #check if originally horizontal
+    
+    add $t1, $zero, $v1     #store temporary colour
+    add $v1, $zero, $a3     #set v1 to other colour
+    add $a3, $zero, $t1     #swap around
+    skip_swap:
     xori $t7, $t7, 1    #toggle the piece
     jr $ra
+    
+    #original idea (just in case something fails_)
+    #xori $t7, $t7, 1    #toggle the piece
+    #jr $ra
   
 collide_check:
     #checking if next space is black or not
