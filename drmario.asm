@@ -1,17 +1,17 @@
 ################# CSC258 Assembly Final Project ###################
 # This file contains our implementation of Dr Mario.
 #
-# Student 1: Name, Student Number
+# Student 1: Shrish Luitel, 1010287244
 # Student 2: Name, Student Number (if applicable)
 #
 # We assert that the code submitted here is entirely our own 
 # creation, and will indicate otherwise when it is not.
 #
 ######################## Bitmap Display Configuration ########################
-# - Unit width in pixels:       TODO
-# - Unit height in pixels:      TODO
-# - Display width in pixels:    TODO
-# - Display height in pixels:   TODO
+# - Unit width in pixels:       1
+# - Unit height in pixels:      1
+# - Display width in pixels:    64
+# - Display height in pixels:   64
 # - Base Address for Display:   0x10008000 ($gp)
 ##############################################################################
 
@@ -93,16 +93,51 @@ li $a2, 1                   #flag for horizontal or vertical
 li $t4, 0
 jal draw_line
 
-# x/a0 = 10, y/a1 = 15, size/t6 = 40, a2/orientation = vertical, color/a3 = black
-germ:
-add $a0, $zero, 20          #x-axis
-add $a1, $zero, 15          #y-axis
-add $t6, $zero, 10          #size
-add $a3, $zero, 0x000000    #color
-li $a2, 1                   #flag for horizontal or vertical
-li $t4, 0
-jal draw_line
+line_six:
+ add $a0, $zero, 19      # Corrected x = 25
+ add $a1, $zero, 12      # y = 5 to match other lines
+ add $t6, $zero, 3      # size = 3 pixels
+ add $a3, $zero, 0xffffff    #color
+ li $a2, 0               # Vertical line
+ li $t4, 0
+ jal draw_line
+ 
+ line_seven:
+ add $a0, $zero, 30      # Corrected x = 29 (1-pixel gap)
+ add $a1, $zero, 12       # y remains 5 to align with line six
+ add $t6, $zero, 3       # size = 3 pixels
+ add $a3, $zero, 0xffffff    #color
+ li $a2, 0               # Vertical line
+ li $t4, 0
+ jal draw_line
 
+li $t6, 0
+germ:
+    #li $a3, 0xff0000          # Color = white
+    jal random_colour
+    
+    add $t3, $zero, 30
+    jal random_coordinate
+    add $t1, $zero, $a0
+    add $t1, $t1, 24
+    
+    sll $t5, $t1, 6      # shifts a1 by 6 bits and stores it in t5, equivalent to y * 64
+    
+    
+    add $t3, $zero, 20
+    jal random_coordinate
+    add $t2, $zero, $a0
+    add $t2, $t2, 19
+    
+    add $t5, $t5, $t2    # add x offset to t5 to get pixel position
+    sll $t5, $t5, 2      # multiply by 4 (word size)
+    add $t5, $t5, $t0    # add base address
+    
+    sw $a3, 0($t5)       # store color
+    
+    addi $t6, $t6, 1
+    beq $t6, 4, pill_coords
+    j germ
 
 j pill_coords  # after drawing everything program counter goes to the game loop
 
@@ -132,16 +167,13 @@ move_vertical:
     
 return_to_caller:
     jr $ra
-
-load_germ_save_coord:
-    li $v0, 42          # Random number syscall
-    li $a0, 1           # Lower bound (0)
-    li $a1, 4           # Upper bound (exclusive) → generates 1, 2, 3, or 4
-    syscall             # Random number stored in $a0
     
-    addi $t1, $t1, 0
-    loop_for_germs:
-    
+random_coordinate:
+    li $v0, 42
+    li $a0, 0
+    move $a1, $t3
+    syscall
+    jr $ra
 
 pill_coords:
     add $t5, $zero, $zero
@@ -248,7 +280,7 @@ rotate:
     xori $t7, $t7, 1    #toggle the piece
     jr $ra
     
-    #original idea (just in case something fails_)
+    #original idea
     #xori $t7, $t7, 1    #toggle the piece
     #jr $ra
   
