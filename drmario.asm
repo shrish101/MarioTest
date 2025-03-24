@@ -2,7 +2,7 @@
 # This file contains our implementation of Dr Mario.
 #
 # Student 1: Shrish Luitel, 1010287244
-# Student 2: Name, Student Number (if applicable)
+# Student 2: Ujjvel Lijo, 1009892948 
 #
 # We assert that the code submitted here is entirely our own 
 # creation, and will indicate otherwise when it is not.
