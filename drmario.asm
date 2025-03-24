@@ -194,6 +194,7 @@ game_update_loop:
 	addi	$a0, $zero, 100	# 17 ms
 	syscall
 	
+	move:
 	j collide_check
 	done: beq $v0, 1, pill_coords
 	
@@ -214,6 +215,9 @@ game_update_loop:
 	bne $t9, 1, else      # If t9 == 1, or if a key is pressed, move on to next instruct, else loop
 	lw $t9, 4($t8)                    # load the second word into $t9
 	
+	bne $t9, 0x73, if
+	j move
+	
 if: bne $t9, 0x61, elif               # If t9 = (user inputs A), move on to the next instruct, else loop. (pretend its not Q rn)
     lw $t4, -8($t5)
     beq $t7, 0, vertical # check if vertical or horizontal
@@ -227,7 +231,7 @@ elif: bne $t9, 0x64, elif_two
     bnez $t4, elif_two
     addi $a1, $a1, 1
     
-elif_two: bne $t9, 0x77, else
+elif_two: bne $t9, 0x77, elif_three
     beq $t7, 0, vertical_rotation # check if vertical or horizontal
     j rotate_check
     vertical_rotation:
@@ -235,6 +239,9 @@ elif_two: bne $t9, 0x77, else
     beq $t4, 0x000000 rotate_check
     addi $a1, $a1, -1
     rotate_check: jal rotate
+    
+elif_three: bne $t9, 0x71, else
+    j exit_game
     
 else: 
     #add $a3, $zero, 0xffffff
@@ -414,3 +421,6 @@ check_4:
             addi $s0, $s0, -1
             j loop2
     endloop: jr $ra
+    
+exit_game:
+    syscall
