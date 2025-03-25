@@ -31,7 +31,11 @@ ADDR_KBRD:
 ##############################################################################
 # Mutable Data
 ##############################################################################
+color_grid_values:
+    .word 0x000000:4096
 
+supported_boolean:
+    .word 0:4096
 ##############################################################################
 # Code
 ##############################################################################
@@ -43,6 +47,7 @@ li $t2, 0x00ff00 # $t2 = green
 li $t3, 0x0000ff # $t3 = blue
 lw $t0, ADDR_DSPL
 lw $t8, ADDR_KBRD
+la $s0, color_grid_values
 
 # a0 = 10, a1 = 15, t6 = 30, a2/orientation = horizontal, color/a3 = white
 upper_horizontal_line:
@@ -52,7 +57,7 @@ add $t6, $zero, 23          #size
 add $a3, $zero, 0xffffff    #color
 li $a2, 1                   #flag for horizontal or vertical
 li $t4, 0
-jal draw_line
+jal add_line_to_pixel_grid
 
 # x/a0 = 10, y/a1 = 15, size/t6 = 40, a2/orientation = vertical, color/a3 = white
 left_vertical_line:
@@ -62,7 +67,7 @@ add $t6, $zero, 24          #size
 add $a3, $zero, 0xffffff    #color
 li $a2, 0                   #flag for horizontal or vertical
 li $t4, 0
-jal draw_line
+jal add_line_to_pixel_grid
 
 # x/a0 = 10, y/a1 = 15, size/t6 = 40, a2/orientation = vertical, color/a3 = white
 right_vertical_line:
@@ -72,7 +77,7 @@ add $t6, $zero, 24          #size
 add $a3, $zero, 0xffffff    #color
 li $a2, 0                   #flag for horizontal or vertical
 li $t4, 0
-jal draw_line
+jal add_line_to_pixel_grid
 
 # x/a0 = 10, y/a1 = 55, size/t6 = 30, a2/orientation = horizontal, color/a3 = white
 lower_horizontal_line:
@@ -82,7 +87,7 @@ add $t6, $zero, 23          #size
 add $a3, $zero, 0xffffff    #color
 li $a2, 1                   #flag for horizontal or vertical
 li $t4, 0
-jal draw_line
+jal add_line_to_pixel_grid
 
 # x/a0 = 10, y/a1 = 15, size/t6 = 40, a2/orientation = vertical, color/a3 = black
 bottle_gap:
@@ -92,7 +97,7 @@ add $t6, $zero, 5          #size
 add $a3, $zero, 0x000000    #color
 li $a2, 1                   #flag for horizontal or vertical
 li $t4, 0
-jal draw_line
+jal add_line_to_pixel_grid
 
 bottle_gap_left_edge:
  add $a0, $zero, 23      # Corrected x = 25
@@ -101,7 +106,7 @@ bottle_gap_left_edge:
  add $a3, $zero, 0xffffff    #color
  li $a2, 0               # Vertical line
  li $t4, 0
- jal draw_line
+ jal add_line_to_pixel_grid
  
  bottle_gap_right_edge:
  add $a0, $zero, 29      # Corrected x = 29 (1-pixel gap)
@@ -110,52 +115,30 @@ bottle_gap_left_edge:
  add $a3, $zero, 0xffffff    #color
  li $a2, 0               # Vertical line
  li $t4, 0
- jal draw_line
+ jal add_line_to_pixel_grid
 
-germ:
-    #li $a3, 0xff0000          # Color = white
-    jal random_colour
-    
-    add $t3, $zero, 30
-    jal random_coordinate
-    add $t1, $zero, $a0
-    add $t1, $t1, 24
-    
-    sll $t5, $t1, 6      # shifts a1 by 6 bits and stores it in t5, equivalent to y * 64
-    
-    
-    add $t3, $zero, 20
-    jal random_coordinate
-    add $t2, $zero, $a0
-    add $t2, $t2, 19
-    
-    add $t5, $t5, $t2    # add x offset to t5 to get pixel position
-    sll $t5, $t5, 2      # multiply by 4 (word size)
-    add $t5, $t5, $t0    # add base address
-    
-    sw $a3, 0($t5)       # store color
-    
-    addi $t6, $t6, 1
-    beq $t6, 4, pill_coords
-    j germ
-    
-j pill_coords  # after drawing everything program counter goes to the game loop
+    addi $t2, $zero, 2
+    li $v0, 1                  # Syscall for print_int
+    move $a0, $t2              # Print row
+    syscall
 
-draw_line:
+j draw_map  # after drawing everything program counter goes to the game loop
+
+add_line_to_pixel_grid:
     sll $t5, $a1, 6      # shifts a1 by 6 bits and stores it in t5, equivalent to y * 64
     add $t5, $t5, $a0    # add x offset to t5 to get pixel position
     sll $t5, $t5, 2      # multiply by 4 (word size)
-    add $t5, $t5, $t0    # add base address
+    add $s1, $s0, $t5    # adds the translated coordinates to the address of color grid
     
-    sw $a3, 0($t5)       # store color
+    sw $a3, 0($s1)       # stores color in color grid
     
     beq $a2, 1, move_horizontal 
     beq $a2, 0, move_vertical 
     
     postcheck:
-    addi $t4, $t4, 1     
-    beq $t4, $t6, return_to_caller   # stop when reaching line length
-    j draw_line
+    addi $t6, $t6, -1     
+    beq $t6, $zero, return_to_caller   # stop when reaching line length
+    j add_line_to_pixel_grid
     
 move_horizontal:
     addi $a0, $a0, 1 
@@ -175,6 +158,26 @@ random_coordinate:
     syscall
     jr $ra
 
+draw_map:
+    lw $t0, ADDR_DSPL
+    la $s0, color_grid_values
+    add $t1, $zero, $zero
+    add $t2, $zero, 4096
+    
+    li $v0, 1                  # Syscall for print_int
+    move $a0, $s0              # Print row
+    syscall
+    
+    draw_loop: bge $t1, $t2 end_draw 
+       sll $t5, $t1, 2  # multiplies the coordinate by 4 
+       add $t3, $s0, $t5    # add the translated coordinate to color grid and save to t3
+       lw $t6, 0($t3)       # loads the color at the address saved in t3 and save it in t6
+       add $t5, $t5, $t0    # adds base address to t5
+       sw $t6, 0($t5)       # saves the color to the bitmap address
+       addi $t1, $t1, 1     # increment t1 by 1
+       j draw_loop
+    end_draw:
+
 pill_coords:
     add $t5, $zero, $zero
     jal random_colour
@@ -186,6 +189,7 @@ pill_coords:
     jal pill_set_pos
 
 game_update_loop:
+    lw $t0, ADDR_DSPL
     lw $t9, ADDR_KBRD
     lw $t9, 0($t9)                  # Load first word from keyboard
 	
