@@ -16,6 +16,8 @@
 ##############################################################################
 
     .data
+    
+     
 ##############################################################################
 # Immutable Data
 ##############################################################################
@@ -43,75 +45,73 @@ lw $t0, ADDR_DSPL
 lw $t8, ADDR_KBRD
 
 # a0 = 10, a1 = 15, t6 = 30, a2/orientation = horizontal, color/a3 = white
-line_one:
-add $a0, $zero, 10          #x-axis
-add $a1, $zero, 15          #y-axis
-add $t6, $zero, 30          #size
+upper_horizontal_line:
+add $a0, $zero, 15          #x-axis
+add $a1, $zero, 30          #y-axis
+add $t6, $zero, 23          #size
 add $a3, $zero, 0xffffff    #color
 li $a2, 1                   #flag for horizontal or vertical
 li $t4, 0
 jal draw_line
 
 # x/a0 = 10, y/a1 = 15, size/t6 = 40, a2/orientation = vertical, color/a3 = white
-line_two:
-add $a0, $zero, 10          #x-axis
-add $a1, $zero, 15          #y-axis
-add $t6, $zero, 40          #size
+left_vertical_line:
+add $a0, $zero, 15          #x-axis
+add $a1, $zero, 31          #y-axis
+add $t6, $zero, 24          #size
 add $a3, $zero, 0xffffff    #color
 li $a2, 0                   #flag for horizontal or vertical
 li $t4, 0
 jal draw_line
 
 # x/a0 = 10, y/a1 = 15, size/t6 = 40, a2/orientation = vertical, color/a3 = white
-line_three:
-add $a0, $zero, 40          #x-axis
-add $a1, $zero, 15          #y-axis
-add $t6, $zero, 41          #size
+right_vertical_line:
+add $a0, $zero, 37          #x-axis
+add $a1, $zero, 31          #y-axis
+add $t6, $zero, 24          #size
 add $a3, $zero, 0xffffff    #color
 li $a2, 0                   #flag for horizontal or vertical
 li $t4, 0
 jal draw_line
-li $t9, 0xffffff
 
 # x/a0 = 10, y/a1 = 55, size/t6 = 30, a2/orientation = horizontal, color/a3 = white
-line_four:
-add $a0, $zero, 10          #x-axis
+lower_horizontal_line:
+add $a0, $zero, 15          #x-axis
 add $a1, $zero, 55          #y-axis
-add $t6, $zero, 30          #size
+add $t6, $zero, 23          #size
 add $a3, $zero, 0xffffff    #color
 li $a2, 1                   #flag for horizontal or vertical
 li $t4, 0
 jal draw_line
 
 # x/a0 = 10, y/a1 = 15, size/t6 = 40, a2/orientation = vertical, color/a3 = black
-line_five:
-add $a0, $zero, 20          #x-axis
-add $a1, $zero, 15          #y-axis
-add $t6, $zero, 10          #size
+bottle_gap:
+add $a0, $zero, 24          #x-axis
+add $a1, $zero, 30          #y-axis
+add $t6, $zero, 5          #size
 add $a3, $zero, 0x000000    #color
 li $a2, 1                   #flag for horizontal or vertical
 li $t4, 0
 jal draw_line
 
-line_six:
- add $a0, $zero, 19      # Corrected x = 25
- add $a1, $zero, 12      # y = 5 to match other lines
- add $t6, $zero, 3      # size = 3 pixels
+bottle_gap_left_edge:
+ add $a0, $zero, 23      # Corrected x = 25
+ add $a1, $zero, 28      # y = 5 to match other lines
+ add $t6, $zero, 2      # size = 3 pixels
  add $a3, $zero, 0xffffff    #color
  li $a2, 0               # Vertical line
  li $t4, 0
  jal draw_line
  
- line_seven:
- add $a0, $zero, 30      # Corrected x = 29 (1-pixel gap)
- add $a1, $zero, 12       # y remains 5 to align with line six
- add $t6, $zero, 3       # size = 3 pixels
+ bottle_gap_right_edge:
+ add $a0, $zero, 29      # Corrected x = 29 (1-pixel gap)
+ add $a1, $zero, 28       # y remains 5 to align with line six
+ add $t6, $zero, 2       # size = 3 pixels
  add $a3, $zero, 0xffffff    #color
  li $a2, 0               # Vertical line
  li $t4, 0
  jal draw_line
 
-li $t6, 0
 germ:
     #li $a3, 0xff0000          # Color = white
     jal random_colour
@@ -138,7 +138,7 @@ germ:
     addi $t6, $t6, 1
     beq $t6, 4, pill_coords
     j germ
-
+    
 j pill_coords  # after drawing everything program counter goes to the game loop
 
 draw_line:
@@ -180,13 +180,14 @@ pill_coords:
     jal random_colour
     add $t5, $zero, 1
     jal random_colour
-    add $a1, $zero, 25  # x
-    add $a2, $zero, 15   # y
+    add $a1, $zero, 26  # x
+    add $a2, $zero, 28   # y
     li $t7, 0   # 0 = vertical and 1 = horizontal
     jal pill_set_pos
 
 game_update_loop:
-    lw $t9, 0($t8)                  # Load first word from keyboard
+    lw $t9, ADDR_KBRD
+    lw $t9, 0($t9)                  # Load first word from keyboard
 	
 	# Sleep for 17 ms so frame rate is about 60
 	addi	$v0, $zero, 32	# syscall sleep
