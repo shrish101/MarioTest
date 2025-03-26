@@ -121,6 +121,34 @@ bottle_gap_left_edge:
     #li $v0, 1                  # Syscall for print_int
     #move $a0, $t2              # Print row
     #syscall
+    
+germ:
+    #li $a3, 0xff0000          # Color = white
+    jal random_colour
+    
+    # y coordinate
+    add $t3, $zero, 10
+    jal random_coordinate
+    add $t1, $zero, $a0
+    add $t1, $t1, 40
+
+    sll $t5, $t1, 6      # shifts a1 by 6 bits and stores it in t5, equivalent to y * 64
+
+    # x coordinate
+    add $t3, $zero, 15
+    jal random_coordinate
+    add $t2, $zero, $a0
+    add $t2, $t2, 20
+
+    add $t5, $t5, $t2    # add x offset to t5 to get pixel position
+    sll $t5, $t5, 2      # multiply by 4 (word size)
+    add $t5, $t5, $s0    # add base address
+
+    sw $a3, 0($t5)       # store color
+
+    addi $t6, $t6, 1
+    beq $t6, 3, pill_coords
+    j germ
 
 j draw_map  # after drawing everything program counter goes to the game loop
 
