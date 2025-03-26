@@ -27,7 +27,6 @@ ADDR_DSPL:
 # The address of the keyboard. Don't forget to connect it!
 ADDR_KBRD:
     .word 0xffff0000
-
 ##############################################################################
 # Mutable Data
 ##############################################################################
@@ -47,7 +46,8 @@ li $t2, 0x00ff00 # $t2 = green
 li $t3, 0x0000ff # $t3 = blue
 lw $t0, ADDR_DSPL
 lw $t8, ADDR_KBRD
-la $s0, color_grid_values
+la $s0, color_grid_values   #colours for each location in the grid
+la $s1, supported_boolean   #variable for "pointer" to support (if 0, pointer to itself)
 
 # a0 = 10, a1 = 15, t6 = 30, a2/orientation = horizontal, color/a3 = white
 upper_horizontal_line:
@@ -118,9 +118,9 @@ bottle_gap_left_edge:
  jal add_line_to_pixel_grid
 
     addi $t2, $zero, 2
-    li $v0, 1                  # Syscall for print_int
-    move $a0, $t2              # Print row
-    syscall
+    #li $v0, 1                  # Syscall for print_int
+    #move $a0, $t2              # Print row
+    #syscall
 
 j draw_map  # after drawing everything program counter goes to the game loop
 
@@ -164,11 +164,11 @@ draw_map:
     add $t1, $zero, $zero
     add $t2, $zero, 4096
     
-    li $v0, 1                  # Syscall for print_int
-    move $a0, $s0              # Print row
-    syscall
+    #li $v0, 1                  # Syscall for print_int
+    #move $a0, $s0              # Print row
+    #syscall
     
-    draw_loop: bge $t1, $t2 end_draw 
+    draw_loop: bge $t1, $t2 end_draw
        sll $t5, $t1, 2  # multiplies the coordinate by 4 
        add $t3, $s0, $t5    # add the translated coordinate to color grid and save to t3
        lw $t6, 0($t3)       # loads the color at the address saved in t3 and save it in t6
@@ -179,6 +179,10 @@ draw_map:
     end_draw:
 
 pill_coords:
+    lw $t0, ADDR_DSPL
+    la $s0, color_grid_values
+    la $s1, supported_boolean
+    
     add $t5, $zero, $zero
     jal random_colour
     add $t5, $zero, 1
@@ -187,6 +191,7 @@ pill_coords:
     add $a2, $zero, 28   # y
     li $t7, 0   # 0 = vertical and 1 = horizontal
     jal pill_set_pos
+    jal re_draw_map
 
 game_update_loop:
     lw $t0, ADDR_DSPL
@@ -209,13 +214,13 @@ game_update_loop:
     sw $v1, 0($sp)
     add $a3, $zero, 0x000000 
     add $v1, $zero, 0x000000 
-    jal pill_set_pos         
+    jal pill_set_pos
+    #jal re_draw_map
     addi $a2, $a2, 1         
     lw $v1, 0($sp)
     addi $sp, $sp, 4
     lw $a3, 0($sp)
     addi $sp, $sp, 4
-
 	
 	bne $t9, 1, else      # If t9 == 1, or if a key is pressed, move on to next instruct, else loop
 	lw $t9, 4($t8)                    # load the second word into $t9
@@ -251,6 +256,7 @@ elif_three: bne $t9, 0x71, else
 else: 
     #add $a3, $zero, 0xffffff
     jal pill_set_pos
+    jal re_draw_map
     
     # here we can implement a reset for the pill location
     
@@ -264,8 +270,8 @@ pill_set_pos:
     sll $t5, $a2, 6      # shifts a1 by 6 bits and stores it in t5, equivalent to y * 64
     add $t5, $t5, $a1    # add x offset to t5 to get pixel position
     sll $t5, $t5, 2      # multiply by 4 (word size)
-    add $t5, $t5, $t0    # add base address
-
+    add $t5, $t5, $s0    # add base address
+    
     sw $a3, 0($t5)       # store color
     
     beq $t7, 1, horizontal_pill
@@ -315,7 +321,49 @@ collide_check:
 
 collision_detected:
     li   $v0, 1          # Collision detected, return 1
-    j check_pixels_for_row
+    
+    #NOT SURE IF NEEDED
+    la $s1, supported_boolean   #variable for "pointer" to support (if 0, pointer to itself)
+    #Updating the orientation arry
+    sll $t5, $a2, 6      # shifts a1 by 6 bits and stores it in t5, equivalent to y * 64
+    add $t5, $t5, $a1    # add x offset to t5 to get pixel position
+    sll $t5, $t5, 2      # multiply by 4 (word size)
+    add $t5, $t5, $s1    # add base address
+    
+    beq $t7, 0, vertical_orientation    #check if the piece is vertical
+    beq $t7, 1, horizontal_orientation  #check if horizontal
+    
+    # we can change which value this hold, for now i am just writing like the "offset"
+    #these values hold "pointer" to its support
+    #update piece and below
+    vertical_orientation:
+            li $t1, 6
+            li $t2, -6
+            sw $t1, 0($t5)
+            addi $t5, $t5, 256
+            sw $t2, 0($t5)
+            j finish_orientation
+    
+    #update piece and right
+    horizontal_orientation:
+            li $t1, 4
+            li $t2, -4
+            sw $t1, 0($t5)
+            addi $t5, $t5, 4
+            sw $t2, 0($t5)
+    
+    #Testing if correct values 
+    #lw $v0, 1                  # Syscall for print_int
+    #move $a0, $t5              # Print row
+    #syscall
+    
+    finish_orientation:
+    # To print the first stored value (-6)
+    lw $a0, 0($t5)   # Load the value from memory
+    li $v0, 1           # Syscall for print_int
+    syscall
+    
+    j check_pixels_for_row  #NEED TO FIX (UPATE THE S0 PROPERLY)
     j done 
 
 #This feels hard code we can fix later
@@ -426,6 +474,28 @@ check_4:
             addi $s0, $s0, -1
             j loop2
     endloop: jr $ra
+
+re_draw_map:
+    lw $t0, ADDR_DSPL
+    la $s0, color_grid_values
+    add $t1, $zero, $zero
+    add $t2, $zero, 4096
+    
+    #li $v0, 1                  # Syscall for print_int
+    #move $a0, $s0              # Print row
+    #syscall
+    
+    re_draw_loop: bge $t1, $t2 end_draw_2
+       sll $t5, $t1, 2  # multiplies the coordinate by 4 
+       add $t3, $s0, $t5    # add the translated coordinate to color grid and save to t3
+       lw $t6, 0($t3)       # loads the color at the address saved in t3 and save it in t6
+       add $t5, $t5, $t0    # adds base address to t5
+       sw $t6, 0($t5)       # saves the color to the bitmap address
+       addi $t1, $t1, 1     # increment t1 by 1
+       j re_draw_loop
+    end_draw_2:
+    jr $ra
+    
     
 exit_game:
     syscall
