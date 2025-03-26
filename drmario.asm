@@ -353,10 +353,10 @@ collision_detected:
     #NOT SURE IF NEEDED
     la $s1, supported_boolean   #variable for "pointer" to support (if 0, pointer to itself)
     #Updating the orientation arry
-    sll $t5, $a2, 6      # shifts a1 by 6 bits and stores it in t5, equivalent to y * 64
-    add $t5, $t5, $a1    # add x offset to t5 to get pixel position
-    sll $t5, $t5, 2      # multiply by 4 (word size)
-    add $t5, $t5, $s1    # add base address
+    sll $t6, $a2, 6      # shifts a1 by 6 bits and stores it in t5, equivalent to y * 64
+    add $t6, $t6, $a1    # add x offset to t5 to get pixel position
+    sll $t6, $t6, 2      # multiply by 4 (word size)
+    add $t6, $t6, $s1    # add base address
     
     beq $t7, 0, vertical_orientation    #check if the piece is vertical
     beq $t7, 1, horizontal_orientation  #check if horizontal
@@ -367,18 +367,18 @@ collision_detected:
     vertical_orientation:
             li $t1, 6
             li $t2, -6
-            sw $t1, 0($t5)
-            addi $t5, $t5, 256
-            sw $t2, 0($t5)
+            sw $t1, 0($t6)
+            addi $t5, $t6, 256
+            sw $t2, 0($t6)
             j finish_orientation
     
     #update piece and right
     horizontal_orientation:
             li $t1, 4
             li $t2, -4
-            sw $t1, 0($t5)
-            addi $t5, $t5, 4
-            sw $t2, 0($t5)
+            sw $t1, 0($t6)
+            addi $t5, $t6, 4
+            sw $t2, 0($t6)
     
     #Testing if correct values 
     #lw $v0, 1                  # Syscall for print_int
@@ -387,9 +387,15 @@ collision_detected:
     
     finish_orientation:
     # To print the first stored value (-6)
-    lw $a0, 0($t5)   # Load the value from memory
+    lw $a0, 0($t6)   # Load the value from memory
     li $v0, 1           # Syscall for print_int
     syscall
+    
+    
+    sll $t5, $a2, 6      # shifts a1 by 6 bits and stores it in t5, equivalent to y * 64
+    add $t5, $t5, $a1    # add x offset to t5 to get pixel position
+    sll $t5, $t5, 2      # multiply by 4 (word size)
+    add $t5, $t5, $s0    # add base address
     
     j check_pixels_for_row  #NEED TO FIX (UPATE THE S0 PROPERLY)
     j done 
