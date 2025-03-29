@@ -194,18 +194,13 @@ game_update_loop:
     lw $t9, ADDR_KBRD # set t9 as the input from keyboard
     lw $t9, 0($t9) # set t9 to the first word in the keyboard input
     
-    # temporarily makes s3 (color1) and s4 (color2) black so we can delete the capsule
-    addi $sp, $sp, -4
-    sw $s3, 0($sp)
-    addi $sp, $sp, -4
-    sw $s4, 0($sp)
-    add $s3, $zero, 0x000000 
-    add $s4, $zero, 0x000000 
-    jal pill_set_pos         # call get_capsule_address with x, y, orientation, as parameters, then change t1 and t2 to black (havent done this yet)    
-    lw $s4, 0($sp)
-    addi $sp, $sp, 4
-    lw $s3, 0($sp)
-    addi $sp, $sp, 4
+    add $a0, $zero, $s1       # make arg0 = original x
+    add $a1, $zero, $s2       # make arg1 = original y
+    add $a2, $zero, $s5       # make arg2 = original orientation
+    jal get_capsule_address   # get location of original coords and save it to t1 and t2
+    add $a0, $zero, 0x000000       # make arg0 = color1
+    add $a1, $zero, 0x000000       # make arg1 = color2
+    jal draw_capsule          # set t1 and t2 locations to black
 
     addi $s7, $s7, 1    # add 1 to temp y
 	
@@ -222,7 +217,7 @@ game_update_loop:
         jal rotate
     
     if_for_q: bne $t9, 0x71, collide_check
-        j exit_game
+        j exit
     
     collide_check:
         # add $a0, $zero, $s6           # make argument 0 = x_temp
@@ -235,6 +230,8 @@ game_update_loop:
             # add $a1, $zero, $s2       # make arg1 = original y
             # add $a2, $zero, $s5       # make arg2 = original orientation
             # jal get_capsule_address   # get location of original coords and save it to t1 and t2
+            # add $a0, $zero, $s3       # make arg0 = color1
+            # add $a1, $zero, $s4       # make arg1 = color2
             # jal draw_capsule          # set t1 and t2 locations to color1 and color 2
             # j spawn_pill              # jump back to spawn a new capsule
             
@@ -245,6 +242,8 @@ game_update_loop:
                 # add $a1, $zero, $s2   
                 # add $a2, $zero, $s5
                 # jal get_capsule_address  # using arg0, arg1, arg2, get 2 bitmap addresses saved to t1 (first pixel) and t2 (second pixel)
+                # add $a0, $zero, $s3      # make arg0 = color1
+                # add $a1, $zero, $s4      # make arg1 = color2
                 # jal draw_capsule         # set t1 and t2 locations to color1 and color 2
                 # j spawn_pill             # jump back to spawn a new capsule
                 
@@ -259,42 +258,18 @@ game_update_loop:
                 # add $a1, $zero, $s7
                 # add $a2, $zero, $s0
                 # jal get_capsule_address   # sets t1 and t2 to new coords
-                
-        #jal draw_capsule
         
-            # Sleep for 17 ms so frame rate is about 60
-	        # addi	$v0, $zero, 32	# syscall sleep
-	        # addi	$a0, $zero, 66	# 17 ms
-	        # addi	$a0, $zero, 100	# 17 ms
-	        # syscall
+        # add $a0, $zero, $s3       # make arg0 = color1
+        # add $a1, $zero, $s4       # make arg1 = color2
+        # jal draw_capsule
+        
+        # Sleep for 17 ms so frame rate is about 60
+	    # addi	$v0, $zero, 32	# syscall sleep
+	    # addi	$a0, $zero, 66	# 17 ms
+	    # addi	$a0, $zero, 100	# 17 ms
+	    # syscall
 	        
         #j game_update_loop
-
-exit:
-	li $v0, 10                      # Quit gracefully
-	syscall
-    
-pill_set_pos:
-    sll $t5, $s2, 6      # shifts a1 by 6 bits and stores it in t5, equivalent to y * 64
-    add $t5, $t5, $s1    # add x offset to t5 to get pixel position
-    sll $t5, $t5, 2      # multiply by 4 (word size)
-    add $t5, $t5, $t0    # add base address
-
-    sw $a3, 0($t5)       # store color
-    
-    beq $t7, 1, horizontal_pill
-    j vertical_pill
-    
-horizontal_pill:
-    addi $t5, $t5, 4    #move by 4bytes
-    j draw_second_block
-    
-vertical_pill:
-    addi $t5, $t5, 256
-    
-draw_second_block:
-    sw $v1, 0($t5)
-    jr $ra
 
 rotate:
     beq $s5, 1 skip_swap     #check if originally horizontal
@@ -306,42 +281,6 @@ rotate:
     xori $s0, $s0, 1    #toggle the piece
     jr $ra
     
-collide_check_old:
-    #checking if next space is black or not
-    #need to do something with sidewalls because these have different thinige
-    addi $t1, $s2, 1
-    sll $t3, $t1, 6      # shifts a1 by 6 bits and stores it in t5, equivalent to y * 64
-    add $t3, $t3, $a1    # add x offset to t5 to get pixel position
-    sll $t3, $t3, 2      # multiply by 4 (word size)
-    add $t3, $t3, $t0    # add base address
-    lw $t6, 0($t3)       # store color
-    
-    beq $t7, 1, horizontal_collision
-    beq $t7, 0, veritcal_collision
-
-    # No collision detected, return 0
-    li $v0, 0
-    j done
-
-collision_detected:
-    li   $v0, 1          # Collision detected, return 1
-    j check_pixels_for_row
-    j done 
-
-#This feels hard code we can fix later
-horizontal_collision:
-    bnez $t6, collision_detected  # If not zero, collision detected 
-    # Check the second part of the horizontal pill
-    addi $t3, $t3, 4         # Move to the next block
-    lw $t6, 0($t3)           # Load the color at the second block
-    bnez $t6, collision_detected  # If not zero, collision detected
-    j done
-        
-veritcal_collision:
-    addi $t3, $t3, 256
-    lw $t6, 0($t3)           # Load the color at the second block
-    bnez $t6, collision_detected  # If not zero, collision detected
-    j done
     
 random_colour:
     li $v0, 42          # Random number syscall
@@ -384,58 +323,41 @@ pixel_two_set_color:
     color_yellow2:
         addi $s4, $zero, 0xFFFF00    # Yellow color
         jr $ra
+
+# parameters:
+# a0 = x
+# a1 = y
+# a2 = orientation
+# returns: t1 and t2 (location of both capsule halves)
+get_capsule_address:
+    sll $t1, $a1, 6      # shifts a1 by 6 bits and stores it in t1, equivalent to y * 64
+    add $t1, $t1, $a0    # add x offset to t5 to get pixel position
     
+    bne $a2, 1 set_t2_vertical  #checks if its horizontal, if so a0 = a0 + 1, else if its vertical: a1 = a1 - 1
+    add $a1, $a1, -1
+    j translate_coord_to_address
+    set_t2_vertical:
+    add $a0, $a0, 1
     
-check_pixels_for_row:
-    add $s5, $zero, $v1
-    addi $s7, $zero, 256 # offset amount set to 256
-    jal check_4
-    addi $s7, $zero, 4 #offset amount change to 4
-    jal check_4
-    bne $t7, 0, hor
-    addi $t5, $t5, -256
-    hor: addi $t5, $t5, -4
+    translate_coord_to_address:
+    sll $t2, $a1, 6      # shifts a1 by 6 bits and stores it in t5, equivalent to y * 64
+    add $t2, $t2, $a0    # add x offset to t5 to get pixel position
     
-    add $s5, $zero, $a3
-    jal check_4
-    addi $s7, $zero, 256
-    jal check_4
-    bne $t7, 0, hor2
-    addi $t5, $t5, 256
-    hor2: addi $t5, $t5, 4
+    sll $t1, $t1, 2      # multiply by 4 (word size)
+    sll $t2, $t2, 2
+    add $t1, $t1, $t0    # add base address
+    add $t2, $t2, $t0
     
-    j done
+    jr $ra
+
+# parameters:
+# a0 = color1
+# a1 = color2
+draw_capsule:
+    sw $a0, 0($t1)
+    sw $a1, 0($t2)  
+
+exit:
+	li $v0, 10                      # Quit gracefully
+	syscall
     
-check_4:
-    addi $s0, $zero, 0 # s0 = counter
-    addi $s1, $zero, 1 # s1 = offset
-    add $t4, $zero, $t5 # t4 = temp bitmap address
-    
-    loop:
-    # Check if $s2 >= -1
-    addi $t1, $zero, -1      # Load -1 into $t1
-    blt  $s1, $t1, endloop   # Branch to endloop if $s1 < -1
-    mul $t3, $s1, $s7
-    add $t4, $t4, $t3
-    lw $s6, 0($t4)
-    beq $s6, $s5, else_same
-        addi $s1, $s1, -2
-        add $t4, $zero, $t5
-        j loop
-    else_same:
-        addi $s0, $s0, 1
-    
-    bne $s0, 3, loop
-        mul $s1, $s1, -1
-        addi $t1, $zero, 0x000000
-        sw $t1, 0($t4)
-        loop2: beq $s0, 0, loop
-            mul $t3, $s1, $s7
-            add $t4, $t4, $t3
-            sw $t1, 0($t4)
-            addi $s0, $s0, -1
-            j loop2
-    endloop: jr $ra
-    
-exit_game:
-    syscall
