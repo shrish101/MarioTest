@@ -220,56 +220,58 @@ game_update_loop:
         j exit
     
     collide_check:
-        # add $a0, $zero, $s6           # make argument 0 = x_temp
-        # add $a1, $zero, $s7           # make argument 1 = y_temp
-        # add $a2, $zero, $s0           # make argument 2 = orientation_temp
-        # jal get_capsule_address       # using arg0, arg1, arg2, get 2 bitmap addresses saved to t1 (first pixel) and t2 (second pixel)
+        add $a0, $zero, $s6           # make argument 0 = x_temp
+        add $a1, $zero, $s7           # make argument 1 = y_temp
+        add $a2, $zero, $s0           # make argument 2 = orientation_temp
+        jal get_capsule_address       # using arg0, arg1, arg2, get 2 bitmap addresses saved to t1 (first pixel) and t2 (second pixel)
         
         # if t1 is not gray             # load the color of t1 into something and check if its empty, if its not, run the body of the if statement
-            # add $a0, $zero, $s1       # make arg0 = original x
-            # add $a1, $zero, $s2       # make arg1 = original y
-            # add $a2, $zero, $s5       # make arg2 = original orientation
-            # jal get_capsule_address   # get location of original coords and save it to t1 and t2
-            # add $a0, $zero, $s3       # make arg0 = color1
-            # add $a1, $zero, $s4       # make arg1 = color2
-            # jal draw_capsule          # set t1 and t2 locations to color1 and color 2
-            # j spawn_pill              # jump back to spawn a new capsule
+        beq $t1, 0x00000000, check_other_gray
+            add $a0, $zero, $s1       # make arg0 = original x
+            add $a1, $zero, $s2       # make arg1 = original y
+            add $a2, $zero, $s5       # make arg2 = original orientation
+            jal get_capsule_address   # get location of original coords and save it to t1 and t2
+            add $a0, $zero, $s3       # make arg0 = color1
+            add $a1, $zero, $s4       # make arg1 = color2
+            jal draw_capsule          # set t1 and t2 locations to color1 and color 2
+            j spawn_pill              # jump back to spawn a new capsule
             
         # if t2 is not gray             # load the color of t2 into something and check if its empty, if its not, run the body of the if statement
-        
+        check_other_gray:
+        beq $t2, 0x00000000, else 
             # if s5 - s0 is zero        # (s5 - s0) is zero when user has not pressed 'w', if this is true that means the second pixel has a collision and its not from rotating into another pixel
-                # add $a0, $zero, $s1   # save the original coords into the arguments
-                # add $a1, $zero, $s2   
-                # add $a2, $zero, $s5
-                # jal get_capsule_address  # using arg0, arg1, arg2, get 2 bitmap addresses saved to t1 (first pixel) and t2 (second pixel)
-                # add $a0, $zero, $s3      # make arg0 = color1
-                # add $a1, $zero, $s4      # make arg1 = color2
-                # jal draw_capsule         # set t1 and t2 locations to color1 and color 2
-                # j spawn_pill             # jump back to spawn a new capsule
+                add $a0, $zero, $s1   # save the original coords into the arguments
+                add $a1, $zero, $s2   
+                add $a2, $zero, $s5
+                jal get_capsule_address  # using arg0, arg1, arg2, get 2 bitmap addresses saved to t1 (first pixel) and t2 (second pixel)
+                add $a0, $zero, $s3      # make arg0 = color1
+                add $a1, $zero, $s4      # make arg1 = color2
+                jal draw_capsule         # set t1 and t2 locations to color1 and color 2
+                j spawn_pill             # jump back to spawn a new capsule
                 
-            # else:                        # this means theres a collision but its from rotating
-                # addi $s6, $s6, -1        # change x_temp = x_temp - 1
+            else:                        # this means theres a collision but its from rotating
+                addi $s6, $s6, -1        # change x_temp = x_temp - 1
                 
-                # add $t1, $zero, $s4      # switches colors
-                # add $s4, $zero, $s3     
-                # add $s3, $zero, $t1     
+                add $t1, $zero, $s4      # switches colors
+                add $s4, $zero, $s3     
+                add $s3, $zero, $t1     
                 
-                # add $a0, $zero, $s6      # get bitmap address for new coords
-                # add $a1, $zero, $s7
-                # add $a2, $zero, $s0
-                # jal get_capsule_address   # sets t1 and t2 to new coords
+                add $a0, $zero, $s6      # get bitmap address for new coords
+                add $a1, $zero, $s7
+                add $a2, $zero, $s0
+                jal get_capsule_address   # sets t1 and t2 to new coords
         
-        # add $a0, $zero, $s3       # make arg0 = color1
-        # add $a1, $zero, $s4       # make arg1 = color2
-        # jal draw_capsule
+        add $a0, $zero, $s3       # make arg0 = color1
+        add $a1, $zero, $s4       # make arg1 = color2
+        jal draw_capsule
         
         # Sleep for 17 ms so frame rate is about 60
-	    # addi	$v0, $zero, 32	# syscall sleep
-	    # addi	$a0, $zero, 66	# 17 ms
-	    # addi	$a0, $zero, 100	# 17 ms
-	    # syscall
+	    addi $v0, $zero, 32	# syscall sleep
+	    addi $a0, $zero, 66	# 17 ms
+	    addi $a0, $zero, 100	# 17 ms
+	    syscall
 	        
-        #j game_update_loop
+        j game_update_loop
 
 rotate:
     beq $s5, 1 skip_swap     #check if originally horizontal
@@ -355,7 +357,8 @@ get_capsule_address:
 # a1 = color2
 draw_capsule:
     sw $a0, 0($t1)
-    sw $a1, 0($t2)  
+    sw $a1, 0($t2)
+    jr $ra 
 
 exit:
 	li $v0, 10                      # Quit gracefully
