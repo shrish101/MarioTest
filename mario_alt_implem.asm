@@ -194,9 +194,9 @@ game_update_loop:
     lw $t9, ADDR_KBRD # set t9 as the input from keyboard
     lw $t9, 0($t9) # set t9 to the first word in the keyboard input
     
-    add $a0, $zero, $s1       # make arg0 = original x
-    add $a1, $zero, $s2       # make arg1 = original y
-    add $a2, $zero, $s5       # make arg2 = original orientation
+    add $a0, $zero, $s6       # make arg0 = original x
+    add $a1, $zero, $s7       # make arg1 = original y
+    add $a2, $zero, $s0       # make arg2 = original orientation
     jal get_capsule_address   # get location of original coords and save it to t1 and t2
     add $a0, $zero, 0x000000       # make arg0 = color1
     add $a1, $zero, 0x000000       # make arg1 = color2
@@ -204,7 +204,7 @@ game_update_loop:
 
     addi $s7, $s7, 1    # add 1 to temp y
 	
-	bne $t9, 0, collide_check      # If t9 == 0, (if no key is pressed), go straight to collide check
+	beq $t9, 0, collide_check      # If t9 == 0, (if no key is pressed), go straight to collide check
 	lw $t9, 4($t8)                    # load the second word into $t9
 	
     if_for_a: bne $t9, 0x61, if_for_d               # If t9 = (user inputs A), move on to the next instruct, else loop. (pretend its not Q rn)
@@ -226,7 +226,8 @@ game_update_loop:
         jal get_capsule_address       # using arg0, arg1, arg2, get 2 bitmap addresses saved to t1 (first pixel) and t2 (second pixel)
         
         # if t1 is not gray             # load the color of t1 into something and check if its empty, if its not, run the body of the if statement
-        beq $t1, 0x00000000, check_other_gray
+        lw $t3, 0($t1)
+        beq $t3, 0x00000000, check_other_gray
             add $a0, $zero, $s1       # make arg0 = original x
             add $a1, $zero, $s2       # make arg1 = original y
             add $a2, $zero, $s5       # make arg2 = original orientation
@@ -238,7 +239,8 @@ game_update_loop:
             
         # if t2 is not gray             # load the color of t2 into something and check if its empty, if its not, run the body of the if statement
         check_other_gray:
-        beq $t2, 0x00000000, else 
+        lw $t3, 0($t2)
+        beq $t3, 0x00000000,  no_collision
             # if s5 - s0 is zero        # (s5 - s0) is zero when user has not pressed 'w', if this is true that means the second pixel has a collision and its not from rotating into another pixel
                 add $a0, $zero, $s1   # save the original coords into the arguments
                 add $a1, $zero, $s2   
@@ -260,6 +262,11 @@ game_update_loop:
                 add $a1, $zero, $s7
                 add $a2, $zero, $s0
                 jal get_capsule_address   # sets t1 and t2 to new coords
+        
+        no_collision:
+        add $s1, $zero, $s6
+        add $s2, $zero, $s7
+        add $s5, $zero, $s0
         
         add $a0, $zero, $s3       # make arg0 = color1
         add $a1, $zero, $s4       # make arg1 = color2
