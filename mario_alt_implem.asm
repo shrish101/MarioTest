@@ -251,6 +251,8 @@ game_update_loop:
         j game_update_loop
         
         change_values:
+        beq $s2, 28, end_game
+        
         add $s6, $zero, $s1     # make x_temp into x_original (revert back since there is a collision)
         add $s0, $zero, $s5
         
@@ -523,4 +525,22 @@ apply_gravity:
 exit:
 	li $v0, 10                      # Quit gracefully
 	syscall
+    
+    
+end_game:
+    add $t7, $zero, $t7
+    jal draw_scren_black
+
+
+draw_scren_black:
+    
+    add $a0, $zero, 0         #x-axis
+    add $a1, $zero, 0          #y-axis
+    add $t6, $zero, 23          #size
+    add $a3, $zero, 0xffffff    #color
+    li $a2, 1                   #flag for horizontal or vertical
+    li $t4, 0
+    jal draw_line
+    
+    
     
