@@ -112,19 +112,19 @@ bottle_gap_left_edge:
  li $t4, 0
  jal draw_line
 
+add $t6, $zero, $zero
 germ:
-    #li $a3, 0xff0000          # Color = white
+    add $t5, $zero, $zero
     jal random_colour
     
-    add $t3, $zero, 30
+    add $t3, $zero, 10
     jal random_coordinate
     add $t1, $zero, $a0
-    add $t1, $t1, 24
+    add $t1, $t1, 40
     
     sll $t5, $t1, 6      # shifts a1 by 6 bits and stores it in t5, equivalent to y * 64
     
-    
-    add $t3, $zero, 20
+    add $t3, $zero, 15
     jal random_coordinate
     add $t2, $zero, $a0
     add $t2, $t2, 19
@@ -133,10 +133,10 @@ germ:
     sll $t5, $t5, 2      # multiply by 4 (word size)
     add $t5, $t5, $t0    # add base address
     
-    sw $a3, 0($t5)       # store color
+    sw $s3, 0($t5)       # store color
     
     addi $t6, $t6, 1
-    beq $t6, 4, spawn_pill
+    beq $t6, 3, spawn_pill
     j germ
     
 j spawn_pill  # after drawing everything program counter goes to the game loop
@@ -393,23 +393,6 @@ check_pixels_for_row:
     jal check_4
     addi $t7, $zero, 4 #horizontal offset
     jal check_4
-
-    #add $t5, $zero, $s3 #first colour stored
-    #addi $t7, $zero, 256 #vertical offset
-    #jal check_4 #check 4
-    #addi $t7, $zero, 4 #offset horizontal
-    #jal check_4
-    #bne $s0, 0, hor 
-    #addi $t1, $t1, -256
-    #hor: addi $t1, $t1, -4
-    
-    #add $t5, $zero, $s4 #second colour
-    #jal check_4
-    #addi $t7, $zero, 256
-    #jal check_4
-    #bne $s0, 0, hor2
-    #addi $t1, $t1, 256
-    #hor2: addi $t1, $t1, 4
     
     j finished_check_4
     
@@ -440,46 +423,62 @@ check_4:
         
         addi $sp, $sp, -4
         sw $ra, 0($sp)
-        jal apply_gravity
-        lw $ra, 0($sp)
-        addi $sp, $sp, 4
         
-        loop2: beq $v0, 0, loop
-            mul $t3, $v1, $t7
-            add $t4, $t4, $t3
-            sw $t9, 0($t4)
-            
-            addi $sp, $sp, -4
-            sw $ra, 0($sp)
+        beq $7, 4, horizontal_falls
+        beq $t7, 256, vertical_falls
+        
+        #hard code idea for now
+        #calls gravity every time
+        horizontal_falls:
             jal apply_gravity
             lw $ra, 0($sp)
             addi $sp, $sp, 4
             
-            addi $v0, $v0, -1
-            j loop2
+            loop2_horizontal: beq $v0, 0, loop
+                mul $t3, $v1, $t7
+                add $t4, $t4, $t3
+                sw $t9, 0($t4)
+                
+                addi $sp, $sp, -4
+                sw $ra, 0($sp)
+                jal apply_gravity
+                lw $ra, 0($sp)
+                addi $sp, $sp, 4
+                
+                addi $v0, $v0, -1
+                j loop2_horizontal
+         
+        #idea is basically jus call gravity when last block is deleted (because they are all stacked on eacother)
+        vertical_falls:
+            lw $ra, 0($sp)
+            addi $sp, $sp, 4
+            
+            loop2_vertical: beq $v0, 0, loop
+                
+                mul $t3, $v1, $t7
+                add $t4, $t4, $t3
+                sw $t9, 0($t4)
+            
+                addi $sp, $sp, -4
+                sw $ra, 0($sp)
+                lw $ra, 0($sp)
+                addi $sp, $sp, 4
+                
+                beq $v0, 1, apply_gravity
+                
+                addi $v0, $v0, -1
+                j loop2_vertical
     
     endloop: jr $ra
-    
-    
-    #bne $s0, 3, loop
-        #mul $s1, $s1, -1
-        #addi $t1, $zero, 0x000000
-        #sw $t1, 0($t4)
-        #loop2: beq $s0, 0, loop
-            #mul $t3, $s1, $s7
-            #add $t4, $t4, $t3
-            #sw $t1, 0($t4)
-            #addi $s0, $s0, -1
-            #j loop2
-    #endloop: jr $ra
 
 apply_gravity:
     add $a1, $zero, $t4
     
+    #revise this (didnt make sense for a3 cuz a3 wasnt getting updated so i was confused)
     loop_to_bottom:
-    lw $t6, 256($a3)
+    lw $t6, 256($a1) #prev was checking a3 itself
     bne $t6, 0x000000, escape_loop
-    addi $a1, $a3, 256
+    addi $a1, $a1, 256 #idk it was a3 before but stuf wasnt working not fully tested (prev a1, a3 + 256
     j loop_to_bottom
     
     escape_loop:
