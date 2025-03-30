@@ -170,10 +170,10 @@ germ:
     sw $s3, 0($t5)       # store color
     
     addi $t6, $t6, 1
-    beq $t6, $t7, spawn_pill
+    beq $t6, $t7, draw_frist_pill
     j germ
     
-j spawn_pill  # after drawing everything program counter goes to the game loop
+j draw_frist_pill  # after drawing everything program counter goes to the game loop
 
 # sprite_draw: Draws a 16x16 sprite at its given location,
 #             leaving other parts of the bitmap untouched.
@@ -344,6 +344,29 @@ random_coordinate:
     syscall
     jr $ra
 
+#INITIAL PILL ON SIDE
+draw_frist_pill:
+    add $t5, $zero, $zero
+    jal random_colour
+    add $t5, $zero, 1
+    jal random_colour
+    
+    add $s1, $zero, 40          # X INITIALIZATION
+    add $s2, $zero, 23         # Y INITIALIZATION
+    li $s5, 0                   # ORIENTATION INITIALIZATION: 0 = vertical and 1 = horizontal
+    
+    add $s6, $zero, $s1  # temporary X
+    add $s7, $zero, $s2  # temporary y
+    add $s0, $zero, $s5  # temporary orientation
+    
+    add $a0, $zero, $s1       # make arg0 = original x
+    add $a1, $zero, $s2       # make arg1 = original y
+    add $a2, $zero, $s5       # make arg2 = original orientation
+    jal get_capsule_address   # get location of original coords and save it to t1 and t2
+    add $a0, $zero, $s3       # make arg0 = color1
+    add $a1, $zero, $s4       # make arg1 = color2
+    jal draw_capsule          # set t1 and t2 locations to black
+
 spawn_pill:
     
     li   $a0, 40         # starting x
@@ -459,19 +482,52 @@ spawn_pill:
     li   $a1, 30         # starting y
     la   $a2, mario_jump # sprite array pointer
     jal  sprite_draw
-
-    add $t5, $zero, $zero
-    jal random_colour
-    add $t5, $zero, 1
-    jal random_colour
     
-    add $s1, $zero, 26          # X INITIALIZATION
-    add $s2, $zero, 28          # Y INITIALIZATION
-    li $s5, 0                   # ORIENTATION INITIALIZATION: 0 = vertical and 1 = horizontal
-    
-    add $s6, $zero, $s1  # temporary X
-    add $s7, $zero, $s2  # temporary y
-    add $s0, $zero, $s5  # temporary orientation
+    #___________________________________________________________#
+    actual_pill_draw_start:
+        #spawn the pill in 
+        addi $a0, $zero, 40       # make arg0 = original x
+        addi $a1, $zero, 23      # make arg1 = original y
+        add $a2, $zero, 0       # make arg2 = original orientation
+        jal get_capsule_address   # get location of original coords and save it to t1 and t2
+        
+        #lw $t6, 0($t4)
+        #save the colours that are in rightside
+        lw $t3, 0($t1)
+        lw $t4, 0($t2)
+        
+        #using those colours draw onto real board
+        addi $a0, $zero, 26
+        addi $a1, $zero, 28
+        jal get_capsule_address
+        add $a0, $zero, $t3
+        add $a1, $zero, $t4
+        jal draw_capsule
+        
+        # draw the new randoms (RANDOM COLOURS SAVED IN S3 AND S4)
+        add $t5, $zero, $zero
+        jal random_colour
+        add $t5, $zero, 1
+        jal random_colour
+        
+        addi $a0, $zero, 40       # make arg0 = original x
+        addi $a1, $zero, 23      # make arg1 = original y
+        add $a2, $zero, 0       # make arg2 = original orientation
+        jal get_capsule_address   # get location of original coords and save it to t1 and t2
+        add $a0, $zero, $s3       # make arg0 = color1
+        add $a1, $zero, $s4       # make arg1 = color2
+        jal draw_capsule          # set t1 and t2 locations to black
+        
+        add $s3, $zero $t3
+        add $s4, $zero, $t4
+        
+        li $s5, 0                   # ORIENTATION INITIALIZATION: 0 = vertical and 1 = horizontal
+        add $s1, $zero, 26
+        add $s2, $zero, 28
+        
+        add $s6, $zero, $s1  # temporary X
+        add $s7, $zero, $s2  # temporary y
+        add $s0, $zero, $s5  # temporary orientation
     
 
 game_update_loop:
