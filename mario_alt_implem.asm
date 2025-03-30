@@ -196,7 +196,7 @@ game_update_loop:
     add $s5, $zero, $s0
 
     lw $t9, ADDR_KBRD # set t9 as the input from keyboard
-    lw $t9, 0($t9) # set t9 to the first word in the keyboard input
+    lw $t8, 0($t9) # set t9 to the first word in the keyboard input
     
     # Sleep for 17 ms so frame rate is about 60
 	addi $v0, $zero, 32	# syscall sleep
@@ -214,19 +214,19 @@ game_update_loop:
 
     addi $s7, $s7, 1    # add 1 to temp y
 	
-	beq $t9, 0, collide_check      # If t9 == 0, (if no key is pressed), go straight to collide check
-	lw $t9, 4($t8)                    # load the second word into $t9
+	beq $t8, 0, collide_check      # If t9 == 0, (if no key is pressed), go straight to collide check
+	lw $t8, 4($t9)                    # load the second word into $t9
 	
-    if_for_a: bne $t9, 0x61, if_for_d               # If t9 = (user inputs A), move on to the next instruct, else loop. (pretend its not Q rn)
+    if_for_a: bne $t8, 0x61, if_for_d               # If t9 = (user inputs A), move on to the next instruct, else loop. (pretend its not Q rn)
         addi $s6, $s6, -1
     
-    if_for_d: bne $t9, 0x64, if_for_w
+    if_for_d: bne $t8, 0x64, if_for_w
         addi $s6, $s6, 1
     
-    if_for_w: bne $t9, 0x77, if_for_q
+    if_for_w: bne $t8, 0x77, if_for_q
         jal rotate
     
-    if_for_q: bne $t9, 0x71, collide_check
+    if_for_q: bne $t8, 0x71, collide_check
         j exit
     
     
@@ -282,7 +282,12 @@ game_update_loop:
 
         add $a0, $zero, $s3      # make arg0 = color1
         add $a1, $zero, $s4      # make arg1 = color2
+        
         jal draw_capsule
+        
+        jal check_pixels_for_row
+        
+        finished_check_4:
         
         j spawn_pill
 	        
@@ -296,7 +301,6 @@ rotate:
     skip_swap:
     xori $s0, $s0, 1    #toggle the piece
     jr $ra
-    
     
 random_colour:
     li $v0, 42          # Random number syscall
@@ -373,6 +377,87 @@ draw_capsule:
     sw $a0, 0($t1)
     sw $a1, 0($t2)
     jr $ra 
+    
+check_pixels_for_row:
+    
+    add $t5, $zero, $s3
+    add $t4, $zero, $t1
+    addi $t7, $zero, 256 #vertical offset
+    jal check_4
+    addi $t7, $zero, 4 #horizontal offset
+    jal check_4
+    
+    add $t5, $zero, $s4
+    add $t4, $zero, $t2
+    addi $t7, $zero, 256 #vertical offset
+    jal check_4
+    addi $t7, $zero, 4 #horizontal offset
+    jal check_4
+
+    #add $t5, $zero, $s3 #first colour stored
+    #addi $t7, $zero, 256 #vertical offset
+    #jal check_4 #check 4
+    #addi $t7, $zero, 4 #offset horizontal
+    #jal check_4
+    #bne $s0, 0, hor 
+    #addi $t1, $t1, -256
+    #hor: addi $t1, $t1, -4
+    
+    #add $t5, $zero, $s4 #second colour
+    #jal check_4
+    #addi $t7, $zero, 256
+    #jal check_4
+    #bne $s0, 0, hor2
+    #addi $t1, $t1, 256
+    #hor2: addi $t1, $t1, 4
+    
+    j finished_check_4
+    
+check_4:
+    addi $v0, $zero, 0 #s0
+    addi $v1, $zero, 1 #s1 offset
+    #add $t4, $zero, $t1
+    add $a3, $zero, $t4
+    
+    loop:
+    addi $t9, $zero, -1 #loading into -1
+    blt $v1, $t9, endloop
+    mul $t3, $v1, $t7
+    add $t4, $t4, $t3
+    lw $t6, 0($t4)
+    beq $t6, $t5, else_same
+        addi $v1, $v1, -2
+        add $t4, $zero, $a3
+        j loop
+        
+    else_same:
+        addi $v0, $v0, 1
+        
+    bne $v0, 3, loop
+        mul $v1, $v1, -1
+        addi $t9, $zero, 0x000000
+        sw $t9, 0($t4)
+        loop2: beq $v0, 0, loop
+            mul $t3, $v1, $t7
+            add $t4, $t4, $t3
+            sw $t9, 0($t4)
+            addi $v0, $v0, -1
+            j loop2
+    
+    endloop: jr $ra
+    
+    
+    #bne $s0, 3, loop
+        #mul $s1, $s1, -1
+        #addi $t1, $zero, 0x000000
+        #sw $t1, 0($t4)
+        #loop2: beq $s0, 0, loop
+            #mul $t3, $s1, $s7
+            #add $t4, $t4, $t3
+            #sw $t1, 0($t4)
+            #addi $s0, $s0, -1
+            #j loop2
+    #endloop: jr $ra
 
 exit:
 	li $v0, 10                      # Quit gracefully
