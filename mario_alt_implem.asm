@@ -28,6 +28,8 @@ ADDR_DSPL:
 ADDR_KBRD:
     .word 0xffff0000
 
+mario_jump:
+.word 0xFCBA06, 0xFCBA06, 0xFCBA06, 0x000000, 0x000000, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0xFCBA06, 0xFCBA06, 0xD10000, 0xD00102, 0xD20002, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x727000, 0x727000, 0x757100, 0x000000, 0xFCBA06, 0x757100, 0xFCBA06, 0xFDBB07, 0x757100, 0x757100, 0x757100, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x757100, 0x757100, 0xFDBB07, 0xFDBB07, 0xFCBA06, 0x747200, 0xFCBA06, 0xFCBA06, 0xFEB906, 0x757100, 0xFEB906, 0x757002, 0x000000, 0x000000, 0x000000, 0x000000, 0x757100, 0xFBBB06, 0xFCBA06, 0xFCBA06, 0x736F00, 0xF8B803, 0xFCBA06, 0xFCBA06, 0x777000, 0x747200, 0xFCBA06, 0x757100, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x6F7103, 0x6F7103, 0x6F7105, 0x757100, 0x6D6F01, 0xFCBA06, 0xFCBA06, 0xFEBA00, 0xFFBA03, 0x6F7105, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x757100, 0xFEBE09, 0xFFBD0B, 0xFFBF0A, 0xFCBA06, 0xFCBA06, 0xFCBA06, 0xFCBA06, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x121200, 0xE3B81E, 0xFD9A25, 0xE3B81E, 0xE4B91F, 0xE4B91F, 0xFC9824, 0xE6BA22, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x687F03, 0xDD0201, 0x757100, 0x757100, 0x687F03, 0xDE0201, 0x757100, 0x757100, 0x757100, 0x757100, 0x747200, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0xD00100, 0x757100, 0x747200, 0x757100, 0xD20000, 0x757100, 0x757100, 0x757100, 0x757100, 0x757100, 0x757100, 0x706E00, 0x000000, 0x757100, 0x000000, 0x000000, 0xCD0100, 0xD20000, 0xCC0100, 0xD20000, 0xD20000, 0x777000, 0x757100, 0x777000, 0x6F6C01, 0x716B00, 0x747102, 0xFCBA06, 0xFCBA06, 0x757100, 0x757100, 0xD20000, 0xFDBB07, 0xD20000, 0xFDBB07, 0xD00100, 0xD20000, 0xD20000, 0x757100, 0xD20000, 0x000000, 0x000000, 0xFDBB07, 0xFCBA06, 0xFEB906, 0x757100, 0x757100, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0x000000, 0x757100, 0x000000, 0xFCB908, 0x000000, 0x757100, 0x757100, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0x757100, 0x757100, 0x757100, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0x757100, 0x757100, 0x757100, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0xD20000, 0xD20000, 0xD20000, 0xD20000, 0x000000, 0x000000, 0x757100, 0x000000
 ##############################################################################
 # Mutable Data
 ##############################################################################
@@ -165,6 +167,141 @@ germ:
     
 j spawn_pill  # after drawing everything program counter goes to the game loop
 
+# sprite_draw: Draws a 16x16 sprite at its given location,
+#             leaving other parts of the bitmap untouched.
+# Parameters:
+#   a0 = starting x coordinate for the sprite
+#   a1 = starting y coordinate for the sprite
+#   a2 = pointer to the sprite array (16x16, 256 words)
+# Assumptions:
+#   - $t0 contains the base address of the bitmap.
+#   - get_capsule_address remains unchanged.
+sprite_draw:
+    # --- Function Prologue: Save registers used by this routine ---
+    addi    $sp, $sp, -12
+    sw      $ra, 8($sp)
+    sw      $s0, 4($sp)
+    sw      $s1, 0($sp)
+
+    # Copy parameters into saved registers for convenience.
+    move    $s0, $a0        # s0 = starting x
+    move    $s1, $a1        # s1 = starting y
+    move    $t9, $a2        # t9 = pointer to sprite array
+
+    # Initialize row counter (0 to 15).
+    li      $t4, 0
+
+draw_rows:
+    beq     $t4, 16, end_draw   # Done if row equals 16.
+
+    # Reset column counter for each new row.
+    li      $t5, 0
+
+draw_columns:
+    beq     $t5, 16, next_row   # Move to next row if column equals 16.
+
+    # Calculate sprite array index = (row * 16) + column.
+    mul     $t6, $t4, 16        # t6 = row * 16.
+    add     $t6, $t6, $t5       # t6 = row*16 + column.
+    sll     $t6, $t6, 2         # Multiply index by 4 (word size).
+    add     $t7, $t9, $t6       # t7 = address of current sprite pixel.
+
+    lw      $t8, 0($t7)         # Load pixel color.
+
+    # Only draw if the color is not black (0x000000).
+    beq     $t8, $zero, skip_draw
+
+    # Compute destination coordinates:
+    #   a0 = starting x + column offset.
+    #   a1 = starting y + row offset.
+    add     $a0, $s0, $t5
+    add     $a1, $s1, $t4
+    li      $a2, 1             # Orientation (1, per your design).
+
+    # Call the provided routine to compute the destination address.
+    jal     get_capsule_address  # Destination address returned in $t1.
+
+    # Draw the pixel.
+    sw      $t8, 0($t1)
+
+skip_draw:
+    addi    $t5, $t5, 1        # Next column.
+    j       draw_columns
+
+next_row:
+    addi    $t4, $t4, 1        # Next row.
+    j       draw_rows
+
+end_draw:
+    # --- Function Epilogue: Restore saved registers ---
+    lw      $s1, 0($sp)
+    lw      $s0, 4($sp)
+    lw      $ra, 8($sp)
+    addi    $sp, $sp, 12
+    jr      $ra                # Return to caller.
+
+
+
+
+# clear_sprite_area: Clears (sets to black) a 16x16 area on the bitmap.
+# Parameters:
+#   a0 = starting x coordinate
+#   a1 = starting y coordinate
+# Assumptions:
+#   - $t0 contains the base address of the bitmap.
+#   - get_capsule_address remains unchanged.
+clear_sprite_area:
+    # Prologue: Save registers that we will modify.
+    addi    $sp, $sp, -12
+    sw      $ra, 8($sp)
+    sw      $s0, 4($sp)
+    sw      $s1, 0($sp)
+
+    # Store starting coordinates in $s0 and $s1.
+    move    $s0, $a0       # $s0 = starting x
+    move    $s1, $a1       # $s1 = starting y
+
+    # Initialize row counter (0 to 15)
+    li      $t4, 0         # row counter
+
+clear_row_loop:
+    beq     $t4, 16, clear_done   # if row == 16, we're done
+
+    # Reset column counter for each new row.
+    li      $t5, 0         # column counter
+
+clear_col_loop:
+    beq     $t5, 16, next_clear_row  # if column == 16, go to next row
+
+    # Compute current screen coordinates for the pixel.
+    # a0 = start_x + column, a1 = start_y + row.
+    add     $a0, $s0, $t5
+    add     $a1, $s1, $t4
+    li      $a2, 1         # Orientation (same as used elsewhere)
+    
+    # Call get_capsule_address to get the destination address in $t1.
+    jal     get_capsule_address
+
+    # Set the pixel to black.
+    sw      $zero, 0($t1)
+
+    # Next column.
+    addi    $t5, $t5, 1
+    j       clear_col_loop
+
+next_clear_row:
+    # Next row.
+    addi    $t4, $t4, 1
+    j       clear_row_loop
+
+clear_done:
+    # Epilogue: Restore saved registers.
+    lw      $s1, 0($sp)
+    lw      $s0, 4($sp)
+    lw      $ra, 8($sp)
+    addi    $sp, $sp, 12
+    jr      $ra
+
 draw_line:
     sll $t5, $a1, 6      # shifts a1 by 6 bits and stores it in t5, equivalent to y * 64
     add $t5, $t5, $a0    # add x offset to t5 to get pixel position
@@ -200,6 +337,84 @@ random_coordinate:
     jr $ra
 
 spawn_pill:
+    li   $a0, 40         # starting x
+    li   $a1, 30         # starting y
+    jal  clear_sprite_area
+
+    li   $a0, 40         # starting x
+    li   $a1, 27         # starting y
+    la   $a2, mario_jump # sprite array pointer
+    jal  sprite_draw
+    
+    # Save previous values of $v0 and $a0 onto the stack
+    addi $sp, $sp, -8    # Make space for two registers
+    sw $v0, 4($sp)       # Store $v0 at $sp + 4
+    sw $a0, 0($sp)       # Store $a0 at $sp
+    # Perform the syscall for sleep
+    addi $v0, $zero, 32  # syscall sleep
+    addi $a0, $zero, 66  # 17 ms (this is overwritten by the next line)
+    addi $a0, $zero, 200 # 17 ms
+    syscall
+    # Restore previous values of $v0 and $a0 from the stack
+    lw $a0, 0($sp)       # Load previous $a0 value
+    lw $v0, 4($sp)       # Load previous $v0 value
+    addi $sp, $sp, 8     # Restore stack pointer
+    
+    li   $a0, 40         # starting x
+    li   $a1, 27         # starting y
+    jal  clear_sprite_area
+    
+    li   $a0, 40         # starting x
+    li   $a1, 25         # starting y
+    la   $a2, mario_jump # sprite array pointer
+    jal  sprite_draw
+    
+    # Save previous values of $v0 and $a0 onto the stack
+    addi $sp, $sp, -8    # Make space for two registers
+    sw $v0, 4($sp)       # Store $v0 at $sp + 4
+    sw $a0, 0($sp)       # Store $a0 at $sp
+    # Perform the syscall for sleep
+    addi $v0, $zero, 32  # syscall sleep
+    addi $a0, $zero, 66  # 17 ms (this is overwritten by the next line)
+    addi $a0, $zero, 200 # 17 ms
+    syscall
+    # Restore previous values of $v0 and $a0 from the stack
+    lw $a0, 0($sp)       # Load previous $a0 value
+    lw $v0, 4($sp)       # Load previous $v0 value
+    addi $sp, $sp, 8     # Restore stack pointer
+    
+    li   $a0, 40         # starting x
+    li   $a1, 25         # starting y
+    jal  clear_sprite_area
+    
+    li   $a0, 40         # starting x
+    li   $a1, 27         # starting y
+    la   $a2, mario_jump # sprite array pointer
+    jal  sprite_draw
+    
+    # Save previous values of $v0 and $a0 onto the stack
+    addi $sp, $sp, -8    # Make space for two registers
+    sw $v0, 4($sp)       # Store $v0 at $sp + 4
+    sw $a0, 0($sp)       # Store $a0 at $sp
+    # Perform the syscall for sleep
+    addi $v0, $zero, 32  # syscall sleep
+    addi $a0, $zero, 66  # 17 ms (this is overwritten by the next line)
+    addi $a0, $zero, 200 # 17 ms
+    syscall
+    # Restore previous values of $v0 and $a0 from the stack
+    lw $a0, 0($sp)       # Load previous $a0 value
+    lw $v0, 4($sp)       # Load previous $v0 value
+    addi $sp, $sp, 8     # Restore stack pointer
+    
+    li   $a0, 40         # starting x
+    li   $a1, 27         # starting y
+    jal  clear_sprite_area
+    
+    li   $a0, 40         # starting x
+    li   $a1, 30         # starting y
+    la   $a2, mario_jump # sprite array pointer
+    jal  sprite_draw
+
     add $t5, $zero, $zero
     jal random_colour
     add $t5, $zero, 1
