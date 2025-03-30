@@ -488,8 +488,11 @@ apply_gravity:
         addi $t3, $t3, 1
         addi $a2, $a2, -256
         lw $t6, 0($a2)
+        beq $t6, 0xffffff, skip_check
         bne $t6, 0x000000, switch_colors  # If $t3 is not 0x000000, jump to switch_colors
-        beq $t3, 6, exit_loop      # Branch to bottle_up_loop if $a2 < 6144
+        
+        skip_check:
+        beq $t3, 24, exit_loop      # Branch to bottle_up_loop if $a2 < 6144
         j bottle_up_loop
         
     switch_colors:
