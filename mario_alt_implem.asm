@@ -437,10 +437,24 @@ check_4:
         mul $v1, $v1, -1
         addi $t9, $zero, 0x000000
         sw $t9, 0($t4)
+        
+        addi $sp, $sp, -4
+        sw $ra, 0($sp)
+        jal apply_gravity
+        lw $ra, 0($sp)
+        addi $sp, $sp, 4
+        
         loop2: beq $v0, 0, loop
             mul $t3, $v1, $t7
             add $t4, $t4, $t3
             sw $t9, 0($t4)
+            
+            addi $sp, $sp, -4
+            sw $ra, 0($sp)
+            jal apply_gravity
+            lw $ra, 0($sp)
+            addi $sp, $sp, 4
+            
             addi $v0, $v0, -1
             j loop2
     
@@ -458,6 +472,34 @@ check_4:
             #addi $s0, $s0, -1
             #j loop2
     #endloop: jr $ra
+
+apply_gravity:
+    add $a1, $zero, $t4
+    
+    loop_to_bottom:
+    lw $t6, 256($a3)
+    bne $t6, 0x000000, escape_loop
+    addi $a1, $a3, 256
+    j loop_to_bottom
+    
+    escape_loop:
+    add $a2, $zero, $a1
+    addi $t3, $zero, 0
+    bottle_up_loop:
+        addi $t3, $t3, 1
+        addi $a2, $a2, -256
+        lw $t6, 0($a2)
+        bne $t6, 0x000000, switch_colors  # If $t3 is not 0x000000, jump to switch_colors
+        beq $t3, 6, exit_loop      # Branch to bottle_up_loop if $a2 < 6144
+        j bottle_up_loop
+        
+    switch_colors:
+        sw $t6 0($a1)
+        addi $t3, $zero, 0x000000
+        sw $t3 0($a2)
+        addi $a1, $a1, -256
+        j bottle_up_loop
+    exit_loop: jr $ra
 
 exit:
 	li $v0, 10                      # Quit gracefully
