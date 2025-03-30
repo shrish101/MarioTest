@@ -424,7 +424,7 @@ check_4:
         addi $sp, $sp, -4
         sw $ra, 0($sp)
         
-        beq $7, 4, horizontal_falls
+        beq $t7, 4, horizontal_falls
         beq $t7, 256, vertical_falls
         
         #hard code idea for now
@@ -494,6 +494,23 @@ apply_gravity:
         
     switch_colors:
         sw $t6 0($a1)
+        
+# Save previous values of $v0 and $a0 onto the stack
+    addi $sp, $sp, -8    # Make space for two registers
+    sw $v0, 4($sp)       # Store $v0 at $sp + 4
+    sw $a0, 0($sp)       # Store $a0 at $sp
+
+    # Perform the syscall for sleep
+    addi $v0, $zero, 32  # syscall sleep
+    addi $a0, $zero, 66  # 17 ms (this is overwritten by the next line)
+    addi $a0, $zero, 100 # 17 ms
+    syscall
+
+    # Restore previous values of $v0 and $a0 from the stack
+    lw $a0, 0($sp)       # Load previous $a0 value
+    lw $v0, 4($sp)       # Load previous $v0 value
+    addi $sp, $sp, 8     # Restore stack pointer
+        
         addi $t3, $zero, 0x000000
         sw $t3 0($a2)
         addi $a1, $a1, -256
