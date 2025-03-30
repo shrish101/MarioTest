@@ -225,8 +225,12 @@ game_update_loop:
     if_for_d: bne $t8, 0x64, if_for_w
         addi $s6, $s6, 1
     
-    if_for_w: bne $t8, 0x77, if_for_q
+    if_for_w: bne $t8, 0x77, if_for_p
         jal rotate
+        
+    if_for_p: bne $t8, 0x70, if_for_q
+        j pause_game
+        wait_for_p:
     
     if_for_q: bne $t8, 0x71, collide_check
         j exit
@@ -842,3 +846,58 @@ clear_and_go_start:
         beq $t2, 64, game_start # if x == 128, move to next row
         
         j draw_loop2
+        
+    pause_game:    
+        #line_1
+        # Line 1 - First Vertical Line
+        add $a0, $zero, 3     # x = 125 (near right edge of 128x128 screen)
+        add $a1, $zero, 2       # y = 0 (top of the screen)
+        add $t6, $zero, 3      # Length = 20 pixels
+        li $a2, 0               # Vertical line
+        li $a3, 0xFFFFFF        # White color
+        li $t4, 0
+        jal draw_line
+        
+        add $a0, $zero, 5     # x = 125 (near right edge of 128x128 screen)
+        add $a1, $zero, 2       # y = 0 (top of the screen)
+        add $t6, $zero, 3      # Length = 20 pixels
+        li $a2, 0               # Vertical line
+        li $a3, 0xFFFFFF        # White color
+        li $t4, 0
+        jal draw_line
+        
+        #line_2
+        
+        wait:
+        # Sleep for 17 ms so frame rate is about 60
+    	addi $v0, $zero, 32	# syscall sleep
+    	addi $a0, $zero, 66	# 17 ms
+        addi $a0, $zero, 100	# 17 ms
+    	syscall
+        
+        lw $t8, ADDR_KBRD
+        beq $t8, 0, wait      # If t9 == 0, (if no key is pressed), go back to game_paused
+    	lw $t8, 4($t9)                    # load the second word into $t9
+    	
+    	bne $t8, 0x72, wait	
+    	
+    	#line_1
+        # Line 1 - First Vertical Line
+        add $a0, $zero, 3     # x = 125 (near right edge of 128x128 screen)
+        add $a1, $zero, 2       # y = 0 (top of the screen)
+        add $t6, $zero, 3      # Length = 20 pixels
+        li $a2, 0               # Vertical line
+        li $a3, 0x000000        # White color
+        li $t4, 0
+        jal draw_line
+        
+        add $a0, $zero, 5     # x = 125 (near right edge of 128x128 screen)
+        add $a1, $zero, 2       # y = 0 (top of the screen)
+        add $t6, $zero, 3      # Length = 20 pixels
+        li $a2, 0               # Vertical line
+        li $a3, 0x000000        # White color
+        li $t4, 0
+        jal draw_line
+        
+        j wait_for_p
+    
