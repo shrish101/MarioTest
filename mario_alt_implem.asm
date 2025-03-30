@@ -37,7 +37,9 @@ ADDR_KBRD:
 ##############################################################################
 	.text
 	.globl main
-	
+
+game_start:
+
 li $t1, 0xff0000 # $t1 = red
 li $t2, 0x00ff00 # $t2 = green
 li $t3, 0x0000ff # $t3 = blue
@@ -291,6 +293,7 @@ game_update_loop:
         
         finished_check_4:
         
+        j end_game
         j spawn_pill
 	        
 
@@ -528,19 +531,314 @@ exit:
     
     
 end_game:
-    add $t7, $zero, $t7
-    jal draw_scren_black
-
-
-draw_scren_black:
+    lw $t0, ADDR_DSPL  
     
-    add $a0, $zero, 0         #x-axis
-    add $a1, $zero, 0          #y-axis
-    add $t6, $zero, 23          #size
-    add $a3, $zero, 0xffffff    #color
-    li $a2, 1                   #flag for horizontal or vertical
+    li $a0, 0 #x coor
+    li $a1, 0 #y coor
+    
+    li $a3, 0x000000    
+    li $a2, 0 #vertical lines
+    
+    li $t2, 0
+    
+    draw_loop:
+        li $a1, 0
+        addi $a0, $t2, 0
+        li $t5, 0
+        li $t4, 0
+        addi $t6, $zero, 64
+        
+        jal draw_line          # draw the line (or pixel)
+        
+        addi $t2, $t2, 1       # increment x-coordinate
+        beq $t2, 64, uji_draw # if x == 128, move to next row
+        
+        j draw_loop
+    
+uji_draw:
+    beq $t6, 1, game_start
+
+     # Draw the letter "G"
+     add $a0, $zero, 10    # x = 10
+     add $a1, $zero, 20    # y = 20
+     add $t6, $zero, 5     # length = 5 pixels
+     add $a3, $zero, 0xff0000  # color
+     li $a2, 1             # Horizontal line
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 10
+     add $a1, $zero, 20
+     add $t6, $zero, 5
+     li $a2, 0             # Vertical line
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 10
+     add $a1, $zero, 24
+     add $t6, $zero, 5
+     li $a2, 1             # Horizontal line
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 14
+     add $a1, $zero, 22
+     add $t6, $zero, 2
+     li $a2, 0             # Vertical line
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 12
+     add $a1, $zero, 22
+     add $t6, $zero, 2
+     li $a2, 1             # Horizontal line
+     li $t4, 0
+     jal draw_line
+    
+    # Draw the letter "A"
+     add $a0, $zero, 17
+     add $a1, $zero, 20
+     add $t6, $zero, 5
+     li $a2, 0
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 21
+     add $a1, $zero, 20
+     add $t6, $zero, 5
+     li $a2, 0
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 17
+     add $a1, $zero, 20
+     add $t6, $zero, 5
+     li $a2, 1
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 17
+     add $a1, $zero, 22
+     add $t6, $zero, 5
+     li $a2, 1
+     li $t4, 0
+     jal draw_line
+    
+    # Draw the letter "M"
+     add $a0, $zero, 24
+     add $a1, $zero, 20
+     add $t6, $zero, 5
+     li $a2, 0
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 28
+     add $a1, $zero, 20
+     add $t6, $zero, 5
+     li $a2, 0
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 24
+     add $a1, $zero, 20
+     add $t6, $zero, 3
+     li $a2, 1
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 26
+     add $a1, $zero, 22
+     add $t6, $zero, 1
+     li $a2, 0
+     li $t4, 0
+     jal draw_line
+    
+    # Draw the letter "E"
+     add $a0, $zero, 31
+     add $a1, $zero, 20
+     add $t6, $zero, 5
+     li $a2, 0
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 31
+     add $a1, $zero, 20
+     add $t6, $zero, 5
+     li $a2, 1
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 31
+     add $a1, $zero, 22
+     add $t6, $zero, 3
+     li $a2, 1
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 31
+     add $a1, $zero, 24
+     add $t6, $zero, 5
+     li $a2, 1
+     li $t4, 0
+     jal draw_line
+    
+    # Move down for "OVER"
+     add $a1, $zero, 30  
+    
+    # Draw the letter "O"
+     add $a0, $zero, 10
+     add $a1, $zero, 30
+     add $t6, $zero, 5
+     li $a2, 1
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 10
+     add $a1, $zero, 30
+     add $t6, $zero, 5
+     li $a2, 0
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 14
+     add $a1, $zero, 30
+     add $t6, $zero, 5
+     li $a2, 0
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 10
+     add $a1, $zero, 34
+     add $t6, $zero, 5
+     li $a2, 1
+     li $t4, 0
+     jal draw_line
+    
+  # Draw the letter "V" properly
+    # Left side of V
+    add $a0, $zero, 17     # Starting x = 17
+    add $a1, $zero, 30     # Starting y = 30
+
     li $t4, 0
+    add $t6, $zero, 5      # 5 steps to reach bottom
+    li $a2, 0              # Vertical line
+    jal draw_line
+
+    # Right side of V
+    add $a0, $zero, 21     # Starting x = 21
+    add $a1, $zero, 30     # Starting y = 30
+
+    li $t4, 0
+    add $t6, $zero, 5      # 5 steps to reach bottom
+    li $a2, 0              # Vertical line
+    jal draw_line
+
+    # Bottom point of V
+    add $a0, $zero, 18     # x = 18 (one step in from left)
+    add $a1, $zero, 34     # y = 34 (bottom of V)
+
+    li $t4, 0
+    add $t6, $zero, 3      # 3 steps to reach the middle
+    li $a2, 1              # Horizontal line
     jal draw_line
     
+    # Draw the letter "E"
+     add $a0, $zero, 24    # x = 24
+     add $a1, $zero, 30    # y = 30
+     add $t6, $zero, 5
+     li $a2, 0             # Vertical line
+     li $t4, 0
+     jal draw_line
     
+     add $a0, $zero, 24
+     add $a1, $zero, 30
+     add $t6, $zero, 3
+     li $a2, 1             # Top horizontal line
+     li $t4, 0
+     jal draw_line
     
+     add $a0, $zero, 24
+     add $a1, $zero, 32
+     add $t6, $zero, 3
+     li $a2, 1             # Middle horizontal line
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 24
+     add $a1, $zero, 34
+     add $t6, $zero, 3
+     li $a2, 1             # Bottom horizontal line
+     li $t4, 0
+     jal draw_line
+    
+    # Draw the letter "R"
+     add $a0, $zero, 29    # x = 29
+     add $a1, $zero, 30    # y = 30
+     add $t6, $zero, 5
+     li $a2, 0             # Vertical line
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 29
+     add $a1, $zero, 30
+     add $t6, $zero, 3
+     li $a2, 1             # Top horizontal line
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 32
+     add $a1, $zero, 30
+     add $t6, $zero, 2
+     li $a2, 0             # Right vertical line of top
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 29
+     add $a1, $zero, 32
+     add $t6, $zero, 3
+     li $a2, 1             # Middle horizontal line
+     li $t4, 0
+     jal draw_line
+    
+     add $a0, $zero, 31
+     add $a1, $zero, 32
+     add $t6, $zero, 3
+     li $a2, 0             # Slant for R
+     li $t4, 0
+     jal draw_line
+    
+    # Finished drawing "GAME OVER"
+
+    lw $t9, ADDR_KBRD # set t9 as the input from keyboard
+    lw $t8, 0($t9) # set t9 to the first word in the keyboard input
+    
+    beq $t8, 0, uji_draw      # If t9 == 0, (if no key is pressed), go straight to collide check
+	lw $t8, 4($t9)                    # load the second word into $t9
+	
+	bne $t8, 0x72, uji_draw
+	j clear_and_go_start
+    
+clear_and_go_start:
+    lw $t0, ADDR_DSPL  
+    
+    li $a0, 0 #x coor
+    li $a1, 0 #y coor
+    
+    li $a3, 0x000000    
+    li $a2, 0 #vertical lines
+    
+    li $t2, 0
+    
+    draw_loop2:
+        li $a1, 0
+        addi $a0, $t2, 0
+        li $t5, 0
+        li $t4, 0
+        addi $t6, $zero, 64
+        
+        jal draw_line          # draw the line (or pixel)
+        
+        addi $t2, $t2, 1       # increment x-coordinate
+        beq $t2, 64, game_start # if x == 128, move to next row
+        
+        j draw_loop2
