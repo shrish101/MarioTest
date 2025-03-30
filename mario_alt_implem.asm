@@ -46,6 +46,28 @@ li $t3, 0x0000ff # $t3 = blue
 lw $t0, ADDR_DSPL
 lw $t8, ADDR_KBRD
 
+lw $t9, ADDR_KBRD # set t9 as the input from keyboard
+lw $t8, 0($t9) # set t9 to the first word in the keyboard input
+
+beq $t8, 0, game_start      # If t9 == 0, (if no key is pressed), go straight to collide check
+lw $t8, 4($t9)                    # load the second word into $t9
+
+# EASY
+    bne $t8, 0x31, medium
+    add $t7, $zero, 2
+    j game_dif_set
+
+medium:
+    bne $t8, 0x32, hard
+    add $t7, $zero, 4
+    j game_dif_set
+
+hard:
+    bne $t8, 0x33, game_start
+    add $t7, $zero, 6
+    j game_dif_set
+
+game_dif_set:
 # a0 = 10, a1 = 15, t6 = 30, a2/orientation = horizontal, color/a3 = white
 upper_horizontal_line:
 add $a0, $zero, 15          #x-axis
@@ -138,7 +160,7 @@ germ:
     sw $s3, 0($t5)       # store color
     
     addi $t6, $t6, 1
-    beq $t6, 3, spawn_pill
+    beq $t6, $t7, spawn_pill
     j germ
     
 j spawn_pill  # after drawing everything program counter goes to the game loop
