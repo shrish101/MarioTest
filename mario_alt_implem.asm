@@ -293,7 +293,7 @@ game_update_loop:
         
         finished_check_4:
         
-        j end_game
+        #j end_game
         j spawn_pill
 	        
 
