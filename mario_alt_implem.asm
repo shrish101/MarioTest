@@ -284,8 +284,8 @@ game_dif_set:
 
 # a0 = 10, a1 = 15, t6 = 30, a2/orientation = horizontal, color/a3 = white
 upper_horizontal_line:
-add $a0, $zero, 15          #x-axis
-add $a1, $zero, 30          #y-axis
+add $a0, $zero, 20          #x-axis
+add $a1, $zero, 20          #y-axis
 add $t6, $zero, 23          #size
 add $a3, $zero, 0xffffff    #color
 li $a2, 1                   #flag for horizontal or vertical
@@ -294,8 +294,8 @@ jal draw_line
 
 # x/a0 = 10, y/a1 = 15, size/t6 = 40, a2/orientation = vertical, color/a3 = white
 left_vertical_line:
-add $a0, $zero, 15          #x-axis
-add $a1, $zero, 31          #y-axis
+add $a0, $zero, 20          #x-axis
+add $a1, $zero, 21          #y-axis
 add $t6, $zero, 24          #size
 add $a3, $zero, 0xffffff    #color
 li $a2, 0                   #flag for horizontal or vertical
@@ -304,8 +304,8 @@ jal draw_line
 
 # x/a0 = 10, y/a1 = 15, size/t6 = 40, a2/orientation = vertical, color/a3 = white
 right_vertical_line:
-add $a0, $zero, 37          #x-axis
-add $a1, $zero, 31          #y-axis
+add $a0, $zero, 42          #x-axis
+add $a1, $zero, 21          #y-axis
 add $t6, $zero, 24          #size
 add $a3, $zero, 0xffffff    #color
 li $a2, 0                   #flag for horizontal or vertical
@@ -314,8 +314,8 @@ jal draw_line
 
 # x/a0 = 10, y/a1 = 55, size/t6 = 30, a2/orientation = horizontal, color/a3 = white
 lower_horizontal_line:
-add $a0, $zero, 15          #x-axis
-add $a1, $zero, 55          #y-axis
+add $a0, $zero, 20          #x-axis
+add $a1, $zero, 45          #y-axis
 add $t6, $zero, 23          #size
 add $a3, $zero, 0xffffff    #color
 li $a2, 1                   #flag for horizontal or vertical
@@ -324,8 +324,8 @@ jal draw_line
 
 # x/a0 = 10, y/a1 = 15, size/t6 = 40, a2/orientation = vertical, color/a3 = black
 bottle_gap:
-add $a0, $zero, 24          #x-axis
-add $a1, $zero, 30          #y-axis
+add $a0, $zero, 29          #x-axis
+add $a1, $zero, 20          #y-axis
 add $t6, $zero, 5          #size
 add $a3, $zero, 0x000000    #color
 li $a2, 1                   #flag for horizontal or vertical
@@ -333,8 +333,8 @@ li $t4, 0
 jal draw_line
 
 bottle_gap_left_edge:
- add $a0, $zero, 23      # Corrected x = 25
- add $a1, $zero, 28      # y = 5 to match other lines
+ add $a0, $zero, 28      # Corrected x = 25
+ add $a1, $zero, 18      # y = 5 to match other lines
  add $t6, $zero, 2      # size = 3 pixels
  add $a3, $zero, 0xffffff    #color
  li $a2, 0               # Vertical line
@@ -342,8 +342,8 @@ bottle_gap_left_edge:
  jal draw_line
  
  bottle_gap_right_edge:
- add $a0, $zero, 29      # Corrected x = 29 (1-pixel gap)
- add $a1, $zero, 28       # y remains 5 to align with line six
+ add $a0, $zero, 34      # Corrected x = 29 (1-pixel gap)
+ add $a1, $zero, 18       # y remains 5 to align with line six
  add $t6, $zero, 2       # size = 3 pixels
  add $a3, $zero, 0xffffff    #color
  li $a2, 0               # Vertical line
@@ -491,7 +491,7 @@ draw_frist_pill:
     add $t5, $zero, 1
     jal random_colour
     
-    add $s1, $zero, 40          # X INITIALIZATION
+    add $s1, $zero, 46          # X INITIALIZATION
     add $s2, $zero, 23         # Y INITIALIZATION
     li $s5, 0                   # ORIENTATION INITIALIZATION: 0 = vertical and 1 = horizontal
     
@@ -531,22 +531,42 @@ spawn_pill:
     jal sprite_draw
     
     
-    li   $a0, 40         # starting x
-    li   $a1, 47         # starting y
+    li   $a0, 0         # starting x
+    li   $a1, 48         # starting y
+    la   $a2, brick_wall # sprite array pointer
+    jal sprite_draw
+
+    li   $a0, 16         # starting x
+    li   $a1, 48         # starting y
+    la   $a2, brick_wall # sprite array pointer
+    jal sprite_draw
+    
+    li   $a0, 32         # starting x
+    li   $a1, 48         # starting y
+    la   $a2, brick_wall # sprite array pointer
+    jal sprite_draw
+    
+    li   $a0, 48         # starting x
+    li   $a1, 48         # starting y
+    la   $a2, brick_wall # sprite array pointer
+    jal sprite_draw
+    
+    li   $a0, 1         # starting x
+    li   $a1, 27         # starting y
     la   $a2, black_screen # sprite array pointer
     jal sprite_draw
     
-    li  $a0, 40
-    li  $a1, 47
+    li  $a0, 1
+    li  $a1, 27
     la   $a2, virus_sprite # sprite array pointer
     jal sprite_draw
 
-    li   $a0, 40         # starting x
+    li   $a0, 46         # starting x
     li   $a1, 30         # starting y
     la   $a2, black_screen # sprite array pointer
     jal sprite_draw
 
-    li   $a0, 40         # starting x
+    li   $a0, 46         # starting x
     li   $a1, 27         # starting y
     la   $a2, mario_jump # sprite array pointer
     jal  sprite_draw    
@@ -565,22 +585,22 @@ spawn_pill:
     lw $v0, 4($sp)       # Load previous $v0 value
     addi $sp, $sp, 8     # Restore stack pointer
     
-    li   $a0, 40         # starting x
-    li   $a1, 47         # starting y
-    la   $a2, black_screen # sprite array pointer
-    jal sprite_draw
+    #li   $a0, 46         # starting x
+    #li   $a1, 47         # starting y
+    #la   $a2, black_screen # sprite array pointer
+    #jal sprite_draw
     
-    li  $a0, 40
-    li  $a1, 47
+    li  $a0, 1
+    li  $a1, 27
     la   $a2, virus_sprite2 # sprite array pointer
     jal sprite_draw
     
-    li   $a0, 40         # starting x
+    li   $a0, 46         # starting x
     li   $a1, 27         # starting y
     la   $a2, black_screen # sprite array pointer
     jal sprite_draw
     
-    li   $a0, 40         # starting x
+    li   $a0, 46         # starting x
     li   $a1, 25         # starting y
     la   $a2, mario_jump # sprite array pointer
     jal  sprite_draw
@@ -599,22 +619,18 @@ spawn_pill:
     lw $v0, 4($sp)       # Load previous $v0 value
     addi $sp, $sp, 8     # Restore stack pointer
     
-    li   $a0, 40         # starting x
-    li   $a1, 47         # starting y
-    la   $a2, black_screen # sprite array pointer
-    jal sprite_draw
     
-    li  $a0, 40
-    li  $a1, 47
+    li  $a0, 1
+    li  $a1, 27
     la   $a2, virus_sprite # sprite array pointer
     jal sprite_draw
     
-    li   $a0, 40         # starting x
+    li   $a0, 46         # starting x
     li   $a1, 25         # starting y
     la   $a2, black_screen # sprite array pointer
     jal sprite_draw
     
-    li   $a0, 40         # starting x
+    li   $a0, 46         # starting x
     li   $a1, 27         # starting y
     la   $a2, mario_jump # sprite array pointer
     jal  sprite_draw
@@ -633,22 +649,22 @@ spawn_pill:
     lw $v0, 4($sp)       # Load previous $v0 value
     addi $sp, $sp, 8     # Restore stack pointer
     
-    li   $a0, 40         # starting x
-    li   $a1, 47         # starting y
-    la   $a2, black_screen # sprite array pointer
-    jal sprite_draw
-    
-    li  $a0, 40
-    li  $a1, 47
-    la   $a2, virus_sprite2 # sprite array pointer
-    jal sprite_draw
-    
-    li   $a0, 40         # starting x
+    li   $a0, 1         # starting x
     li   $a1, 27         # starting y
     la   $a2, black_screen # sprite array pointer
     jal sprite_draw
     
-    li   $a0, 40         # starting x
+    li  $a0, 1
+    li  $a1, 27
+    la   $a2, virus_sprite2 # sprite array pointer
+    jal sprite_draw
+    
+    li   $a0, 46         # starting x
+    li   $a1, 27         # starting y
+    la   $a2, black_screen # sprite array pointer
+    jal sprite_draw
+    
+    li   $a0, 46         # starting x
     li   $a1, 30         # starting y
     la   $a2, mario_jump # sprite array pointer
     jal  sprite_draw
@@ -656,7 +672,7 @@ spawn_pill:
     #___________________________________________________________#
     actual_pill_draw_start:
         #spawn the pill in 
-        addi $a0, $zero, 40       # make arg0 = original x
+        addi $a0, $zero, 46       # make arg0 = original x
         addi $a1, $zero, 23      # make arg1 = original y
         add $a2, $zero, 0       # make arg2 = original orientation
         jal get_capsule_address   # get location of original coords and save it to t1 and t2
@@ -680,7 +696,7 @@ spawn_pill:
         add $t5, $zero, 1
         jal random_colour
         
-        addi $a0, $zero, 40       # make arg0 = original x
+        addi $a0, $zero, 46       # make arg0 = original x
         addi $a1, $zero, 23      # make arg1 = original y
         add $a2, $zero, 0       # make arg2 = original orientation
         jal get_capsule_address   # get location of original coords and save it to t1 and t2
