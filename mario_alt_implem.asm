@@ -1099,7 +1099,7 @@ toggle_color:
     j flash_loop
     
 set_black:
-    li $a3, 0xffffff  # Set to black
+    li $a3, 0xff0000  # Set to black
     addi $t7, $t7, 1  # Increment flash counter
     
     # Check if we flashed 5 times (black → white → black counts as one)
