@@ -1091,7 +1091,7 @@ draw_loop:
 toggle_color:
     # Sleep for ~60 FPS
     addi $v0, $zero, 32
-    addi $a0, $zero, 80
+    addi $a0, $zero, 40
     syscall
     
     # Save $a0, $a1, $a2, $a3 onto the stack before the syscall
@@ -1100,13 +1100,13 @@ toggle_color:
     sw $a1, 4($sp)       # Store $a1 at $sp+4
     sw $a2, 8($sp)       # Store $a2 at $sp+8
     sw $a3, 12($sp)      # Store $a3 at $sp+12
-
-    # Play the sound (after we've saved $a0-$a3)
-    li $a0, 100   # pitch
-    li $a1, 400   # duration
-    li $a2, 1     # instrument
-    li $a3, 100   # volume
-    li $v0, 31    # syscall for sound
+    
+    #SONG
+    li $a0, 50    # Lower pitch for a darker tone
+    li $a1, 700   # Longer duration for an eerie effect
+    li $a2, 14    # Different instrument (try experimenting with this!)
+    li $a3, 120   # Slightly louder volume
+    li $v0, 31    # Syscall for sound
     syscall
 
     # Restore $a0, $a1, $a2, and $a3 from the stack
