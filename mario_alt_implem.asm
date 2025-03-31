@@ -14,10 +14,7 @@
 # - Display height in pixels:   64
 # - Base Address for Display:   0x10008000 ($gp)
 ##############################################################################
-
-    .data
-    
-     
+    .data 
 ##############################################################################
 # Immutable Data
 ##############################################################################
@@ -174,8 +171,8 @@ lw $t8, ADDR_KBRD
 lw $t9, ADDR_KBRD # set t9 as the input from keyboard
 lw $t8, 0($t9) # set t9 to the first word in the keyboard input
 
-beq $t8, 0, game_start      # If t9 == 0, (if no key is pressed), go straight to collide check
-lw $t8, 4($t9)                    # load the second word into $t9
+beq $t8, 0, game_start      # If t8 == 0, (if no key is pressed), go straight to game_start
+lw $t8, 4($t9)                    # load the second word into $t
 
 # EASY
     bne $t8, 0x31, medium
@@ -388,11 +385,8 @@ j draw_frist_pill  # after drawing everything program counter goes to the game l
 #   a0 = starting x coordinate for the sprite
 #   a1 = starting y coordinate for the sprite
 #   a2 = pointer to the sprite array (16x16, 256 words)
-# Assumptions:
-#   - $t0 contains the base address of the bitmap.
-#   - get_capsule_address remains unchanged.
 sprite_draw:
-    # --- Function Prologue: Save registers used by this routine ---
+    # --- stack pointer to save values ---
     addi    $sp, $sp, -12
     sw      $ra, 8($sp)
     sw      $s0, 4($sp)
@@ -423,18 +417,13 @@ draw_columns:
 
     lw      $t8, 0($t7)         # Load pixel color.
 
-
-    # Compute destination coordinates:
     #   a0 = starting x + column offset.
     #   a1 = starting y + row offset.
     add     $a0, $s0, $t5
     add     $a1, $s1, $t4
-    li      $a2, 1             # Orientation (1, per your design).
+    li      $a2, 1 
 
-    # Call the provided routine to compute the destination address.
-    jal     get_capsule_address  # Destination address returned in $t1.
-
-    # Draw the pixel.
+    jal     get_capsule_address
     sw      $t8, 0($t1)
 
 skip_draw:
@@ -446,12 +435,11 @@ next_row:
     j       draw_rows
 
 end_draw:
-    # --- Function Epilogue: Restore saved registers ---
     lw      $s1, 0($sp)
     lw      $s0, 4($sp)
     lw      $ra, 8($sp)
     addi    $sp, $sp, 12
-    jr      $ra                # Return to caller.
+    jr      $ra       
 
 draw_line:
     sll $t5, $a1, 6      # shifts a1 by 6 bits and stores it in t5, equivalent to y * 64
@@ -588,11 +576,6 @@ spawn_pill:
     lw $v0, 4($sp)       # Load previous $v0 value
     addi $sp, $sp, 8     # Restore stack pointer
     
-    #li   $a0, 46         # starting x
-    #li   $a1, 47         # starting y
-    #la   $a2, black_screen # sprite array pointer
-    #jal sprite_draw
-    
     li  $a0, 2
     li  $a1, 27
     la   $a2, virus_sprite2 # sprite array pointer
@@ -621,7 +604,6 @@ spawn_pill:
     lw $a0, 0($sp)       # Load previous $a0 value
     lw $v0, 4($sp)       # Load previous $v0 value
     addi $sp, $sp, 8     # Restore stack pointer
-    
     
     li  $a0, 2
     li  $a1, 27
@@ -935,7 +917,6 @@ check_pixels_for_row:
 check_4:
     addi $v0, $zero, 0 #s0
     addi $v1, $zero, 1 #s1 offset
-    #add $t4, $zero, $t1
     add $a3, $zero, $t4
     
     loop:
@@ -963,8 +944,6 @@ check_4:
         beq $t7, 4, horizontal_falls
         beq $t7, 256, vertical_falls
         
-        #hard code idea for now
-        #calls gravity every time
         horizontal_falls:
             jal apply_gravity
             lw $ra, 0($sp)
@@ -984,7 +963,6 @@ check_4:
                 addi $v0, $v0, -1
                 j loop2_horizontal
          
-        #idea is basically jus call gravity when last block is deleted (because they are all stacked on eacother)
         vertical_falls:
             lw $ra, 0($sp)
             addi $sp, $sp, 4
@@ -1010,11 +988,10 @@ check_4:
 apply_gravity:
     add $a1, $zero, $t4
     
-    #revise this (didnt make sense for a3 cuz a3 wasnt getting updated so i was confused)
     loop_to_bottom:
-    lw $t6, 256($a1) #prev was checking a3 itself
+    lw $t6, 256($a1)
     bne $t6, 0x000000, escape_loop
-    addi $a1, $a1, 256 #idk it was a3 before but stuf wasnt working not fully tested (prev a1, a3 + 256
+    addi $a1, $a1, 256
     j loop_to_bottom
     
     escape_loop:
