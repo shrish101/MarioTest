@@ -875,27 +875,52 @@ exit:
 end_game:
     lw $t0, ADDR_DSPL  
     
-    li $a0, 0 #x coor
-    li $a1, 0 #y coor
+    li $t2, 0      # Reset X coordinate
+    li $a3, 0x000000  # Start with black
+    li $t7, 0      # Flash counter (counts black->white->black cycles)
+
+flash_loop:
+    li $t2, 0  # Reset X coordinate
     
-    li $a3, 0x000000    
-    li $a2, 0 #vertical lines
+draw_loop:
+    li $a1, 0
+    addi $a0, $t2, 0
+    li $t5, 0
+    li $t4, 0
+    addi $t6, $zero, 64
     
-    li $t2, 0
+    jal draw_line  # Draw the line (or pixel)
     
-    draw_loop:
-        li $a1, 0
-        addi $a0, $t2, 0
-        li $t5, 0
-        li $t4, 0
-        addi $t6, $zero, 64
-        
-        jal draw_line          # draw the line (or pixel)
-        
-        addi $t2, $t2, 1       # increment x-coordinate
-        beq $t2, 64, uji_draw # if x == 128, move to next row
-        
-        j draw_loop
+    addi $t2, $t2, 1
+    beq $t2, 64, toggle_color  # If x == 64, toggle color
+    
+    j draw_loop
+
+toggle_color:
+    # Sleep for ~60 FPS
+    addi $v0, $zero, 32
+    addi $a0, $zero, 17
+    syscall
+    
+    # Toggle color between black and white
+    li $t1, 0x000000  # White
+    beq $a3, $t1, set_black
+    li $a3, 0x000000  # Set to white
+    j flash_loop
+    
+set_black:
+    li $a3, 0xffffff  # Set to black
+    addi $t7, $t7, 1  # Increment flash counter
+    
+    # Check if we flashed 5 times (black → white → black counts as one)
+    li $t8, 15
+    beq $t7, $t8, uji_draw  # If 5 flashes, go to uji_draw
+    
+    j flash_loop
+    
+    j uji_draw
+    
+    
     
 uji_draw:
     beq $t6, 1, game_start
@@ -1238,4 +1263,4 @@ clear_and_go_start:
         jal draw_line
         
         j wait_for_p
-    
+        
