@@ -1006,6 +1006,9 @@ apply_gravity:
         addi $a2, $a2, -256
         lw $t6, 0($a2)
         beq $t6, 0xffffff, skip_check
+        beq $t6, 0xA55324, skip_check
+        beq $t6, 0x3C1E0D, skip_check
+        beq $t6, 0x5E2F15, skip_check
         bne $t6, 0x000000, switch_colors  # If $t3 is not 0x000000, jump to switch_colors
         
         skip_check:
