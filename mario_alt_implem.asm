@@ -1089,7 +1089,7 @@ draw_loop:
 toggle_color:
     # Sleep for ~60 FPS
     addi $v0, $zero, 32
-    addi $a0, $zero, 17
+    addi $a0, $zero, 100
     syscall
     
     # Toggle color between black and white
@@ -1103,7 +1103,7 @@ set_black:
     addi $t7, $t7, 1  # Increment flash counter
     
     # Check if we flashed 5 times (black → white → black counts as one)
-    li $t8, 15
+    li $t8, 5
     beq $t7, $t8, uji_draw  # If 5 flashes, go to uji_draw
     
     j flash_loop
